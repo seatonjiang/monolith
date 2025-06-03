@@ -21,7 +21,7 @@ if ! which docker-php-ext-configure >/dev/null || ! which docker-php-ext-enable 
 	exit 1
 fi
 
-IPE_VERSION=master
+IPE_VERSION=2.7.34
 
 StandWithUkraine() {
 	if test -t 1 && ! grep -Eq '^VERSION=.*jessie' /etc/os-release; then
@@ -273,13 +273,6 @@ EOT
 #   Nothing
 processPHPModuleArgument() {
 	processPHPModuleArgument_arg="$1"
-	case "$processPHPModuleArgument_arg" in
-		imagick)
-			if test $PHP_MAJMIN_VERSION -ge 803; then
-				processPHPModuleArgument_arg=imagick/imagick@28f27044e435a2b203e32675e942eb8de620ee58
-			fi
-			;;
-	esac
 	# Convert GitHub short form to long url,
 	# for example: from
 	# php-memcached-dev/php-memcached@8f106564e6bb005ca6100b12ccc89000daafa9d8
@@ -1429,9 +1422,21 @@ buildRequiredPackageLists() {
 					buildRequiredPackageLists_persistent="$buildRequiredPackageLists_persistent c-ares"
 					buildRequiredPackageLists_volatile="$buildRequiredPackageLists_volatile c-ares-dev"
 					if test $PHP_MAJMIN_VERSION -ge 801; then
-						buildRequiredPackageLists_volatile="$buildRequiredPackageLists_volatile sqlite-dev"
+						buildRequiredPackageLists_persistent="$buildRequiredPackageLists_persistent zstd-libs"
+						buildRequiredPackageLists_volatile="$buildRequiredPackageLists_volatile sqlite-dev zstd-dev"
 					fi
 				fi
+				case "${IPE_SWOOLE_WITHOUT_IOURING:-}" in
+					1 | y* | Y*) ;;
+					*)
+						# iouring support in swoole 6 requires liburing 2.5+: available since Alpine 3.19
+						# but with Alpine 3.19 we have a "invalid use of incomplete type 'const struct statx'" error
+						if test $DISTRO_MAJMIN_VERSION -ge 320; then
+							buildRequiredPackageLists_persistent="$buildRequiredPackageLists_persistent liburing"
+							buildRequiredPackageLists_volatile="$buildRequiredPackageLists_volatile liburing-dev"
+						fi
+						;;
+				esac
 				;;
 			swoole@debian)
 				buildRequiredPackageLists_persistent="$buildRequiredPackageLists_persistent libcurl3-gnutls libpq5"
@@ -1444,8 +1449,18 @@ buildRequiredPackageLists() {
 						buildRequiredPackageLists_volatile="$buildRequiredPackageLists_volatile zlib1g-dev libbrotli-dev"
 						if test $PHP_MAJMIN_VERSION -ge 801; then
 							buildRequiredPackageLists_volatile="$buildRequiredPackageLists_volatile libsqlite3-dev"
+							if test $DISTRO_VERSION_NUMBER -ge 11; then
+								# swoole 6 requires libzstd >= 1.4.0, but on debian 10 (buster) we have 1.3.8
+								buildRequiredPackageLists_persistent="$buildRequiredPackageLists_persistent ^libzstd[0-9]*$"
+								buildRequiredPackageLists_volatile="$buildRequiredPackageLists_volatile libzstd-dev"
+							fi
 						fi
 					fi
+				fi
+				if test $DISTRO_VERSION_NUMBER -ge 13; then
+					# iouring support in swoole 6 requires liburing 2.5+: available since Debian Trixie (13)
+					buildRequiredPackageLists_persistent="$buildRequiredPackageLists_persistent liburing2"
+					buildRequiredPackageLists_volatile="$buildRequiredPackageLists_volatile liburing-dev"
 				fi
 				;;
 			sybase_ct@alpine)
@@ -1709,7 +1724,7 @@ expandPackagesToBeInstalled() {
 			resetIFS
 			;;
 		debian)
-			expandPackagesToBeInstalled_log="$(DEBIAN_FRONTEND=noninteractive apt-get install -sy --no-install-recommends $IPE_APTGET_INSTALLOPTIONS $@ 2>&1 || printf '\nE: apt-get failed\n')"
+			expandPackagesToBeInstalled_log="$(apt-get install -sy --no-install-recommends $@ 2>&1 || printf '\nE: apt-get failed\n')"
 			if test -n "$(printf '%s' "$expandPackagesToBeInstalled_log" | grep -E '^E:')"; then
 				printf 'FAILED TO LIST THE WHOLE PACKAGE LIST FOR\n' >&2
 				printf '%s ' "$@" >&2
@@ -1978,7 +1993,7 @@ markPreinstalledPackagesAsUsed() {
 			apk add $PACKAGES_PERSISTENT_PRE
 			;;
 		debian)
-			DEBIAN_FRONTEND=noninteractive apt-mark manual $PACKAGES_PERSISTENT_PRE
+			apt-mark manual $PACKAGES_PERSISTENT_PRE
 			;;
 	esac
 }
@@ -2004,7 +2019,7 @@ installRequiredPackages() {
 			done
 			;;
 		debian)
-			DEBIAN_FRONTEND=noninteractive apt-get install -qqy --no-install-recommends $IPE_APTGET_INSTALLOPTIONS $PACKAGES_PERSISTENT_NEW $PACKAGES_VOLATILE
+			apt-get install -qqy --no-install-recommends $PACKAGES_PERSISTENT_NEW $PACKAGES_VOLATILE
 			;;
 	esac
 }
@@ -2186,12 +2201,12 @@ installMicrosoftSqlServerODBC() {
 			fi
 			printf -- '- installing the APT package\n'
 			if test $PHP_MAJMIN_VERSION -le 703; then
-				DEBIAN_FRONTEND=noninteractive ACCEPT_EULA=Y apt-get install -qqy --no-install-recommends $IPE_APTGET_INSTALLOPTIONS msodbcsql17
+				ACCEPT_EULA=Y apt-get install -qqy --no-install-recommends msodbcsql17
 			elif test $DISTRO_VERSION_NUMBER -ge 9 && test $DISTRO_VERSION_NUMBER -le 12; then
 				# On Debian 9 to 12 we have both msodbcsql17 and msodbcsql18: let's install just one
-				DEBIAN_FRONTEND=noninteractive ACCEPT_EULA=Y apt-get install -qqy --no-install-recommends $IPE_APTGET_INSTALLOPTIONS msodbcsql18
+				ACCEPT_EULA=Y apt-get install -qqy --no-install-recommends msodbcsql18
 			else
-				DEBIAN_FRONTEND=noninteractive ACCEPT_EULA=Y apt-get install -qqy --no-install-recommends $IPE_APTGET_INSTALLOPTIONS '^msodbcsql[0-9]+$'
+				ACCEPT_EULA=Y apt-get install -qqy --no-install-recommends '^msodbcsql[0-9]+$'
 			fi
 			;;
 	esac
@@ -2416,7 +2431,7 @@ isFirebirdInstalled() {
 installFirebird() {
 	printf 'Installing firebird\n'
 	if test $PHP_MAJMIN_VERSION -ge 804; then
-		installFirebird_src="$(getPackageSource https://github.com/FirebirdSQL/firebird/releases/download/v5.0.1/Firebird-5.0.1.1469-0-source.tar.xz)"
+		installFirebird_src="$(getPackageSource https://github.com/FirebirdSQL/firebird/releases/download/v5.0.2/Firebird-5.0.2.1613-0-source.tar.xz)"
 		cd -- "$installFirebird_src"
 		./configure --enable-client-only
 		make -j$(getProcessorCount)
@@ -2521,33 +2536,57 @@ actuallyInstallComposer() {
 
 # Install ionCube Loader
 installIonCubeLoader() {
-	# See https://www.ioncube.com/loaders.php
+	installIonCubeLoader_version=''
+	installIonCubeLoader_soPrefix=ioncube_loader_lin
+	installIonCubeLoader_url='https://downloads.ioncube.com/loader_downloads/ioncube_loaders_lin'
+	case "$DISTRO" in
+		alpine)
+			if test $DISTRO_MAJMIN_VERSION -le 312; then
+				installIonCubeLoader_version=14.0.0 # For 14.4.0 we have a Segmentation Fault
+			fi
+			if test -z "$installIonCubeLoader_version" || test $(compareVersions "$installIonCubeLoader_version" 14.4.0) -ge 0; then
+				installIonCubeLoader_url="${installIonCubeLoader_url}-musl"
+				installIonCubeLoader_soPrefix="${installIonCubeLoader_soPrefix}-musl"
+			fi
+			;;
+	esac
 	case $PHP_BITS in
 		32)
 			case $(uname -m) in
 				aarch* | arm*)
-					installIonCubeLoader_url="https://cdn.seatonjiang.com/ioncube/ioncube_loaders_lin_armv7l.tar.gz"
+					installIonCubeLoader_url="${installIonCubeLoader_url}_armv7l"
 					;;
 				*)
-					installIonCubeLoader_url="https://cdn.seatonjiang.com/ioncube/ioncube_loaders_lin_x86.tar.gz"
+					installIonCubeLoader_url="${installIonCubeLoader_url}_x86"
 					;;
 			esac
 			;;
 		*)
 			case $(uname -m) in
 				aarch64 | arm64 | armv8)
-					installIonCubeLoader_url="https://cdn.seatonjiang.com/ioncube/ioncube_loaders_lin_aarch64.tar.gz"
+					installIonCubeLoader_url="${installIonCubeLoader_url}_aarch64"
 					;;
 				*)
-					installIonCubeLoader_url="https://cdn.seatonjiang.com/ioncube/ioncube_loaders_lin_x86-64.tar.gz"
+					installIonCubeLoader_url="${installIonCubeLoader_url}_x86-64"
 					;;
 			esac
 			;;
 	esac
-	printf 'Downloading ionCube Loader... '
+	installIonCubeLoader_versionDisplayName=latest
+	if test -n "$installIonCubeLoader_version"; then
+		installIonCubeLoader_url="${installIonCubeLoader_url}_${installIonCubeLoader_version}"
+		installIonCubeLoader_versionDisplayName="v$installIonCubeLoader_version"
+	fi
+	installIonCubeLoader_url="${installIonCubeLoader_url}.tar.gz"
+	# See https://www.ioncube.com/loaders.php
+	printf 'Downloading ionCube Loader (%s)... ' "$installIonCubeLoader_versionDisplayName"
 	installIonCubeLoader_dir="$(getPackageSource $installIonCubeLoader_url)"
 	echo 'done.'
-	installIonCubeLoader_so=$(php -r "printf('ioncube_loader_lin_%s.%s%s.so', PHP_MAJOR_VERSION, PHP_MINOR_VERSION, ZEND_THREAD_SAFE ? '_ts' : '');")
+	installIonCubeLoader_so="${installIonCubeLoader_soPrefix}_${PHP_MAJDOTMIN_VERSION}"
+	if test $PHP_THREADSAFE -eq 1; then
+		installIonCubeLoader_so="${installIonCubeLoader_so}_ts"
+	fi
+	installIonCubeLoader_so="${installIonCubeLoader_so}.so"
 	cp "$installIonCubeLoader_dir/$installIonCubeLoader_so" "$(getPHPExtensionsDir)/ioncube_loader.so"
 }
 
@@ -2593,15 +2632,31 @@ installCargo() {
 	if command -v cargo >/dev/null; then
 		return
 	fi
-	printf '# Installing cargo\n'
-	case "$DISTRO" in
-		alpine)
-			# see https://github.com/hyperledger/indy-vdr/issues/69#issuecomment-998104850
-			export RUSTFLAGS='-C target-feature=-crt-static'
-			;;
-	esac
-	curl https://sh.rustup.rs -sSf | sh -s -- -y -q
+	installCargo_cargoversion=
+	if ! test -f "$HOME/.cargo/env"; then
+		printf '# Installing cargo\n'
+		case "$DISTRO" in
+			alpine)
+				# see https://github.com/hyperledger/indy-vdr/issues/69#issuecomment-998104850
+				export RUSTFLAGS='-C target-feature=-crt-static'
+				;;
+		esac
+		curl https://sh.rustup.rs -sSf | sh -s -- -y -q
+		case "$DISTRO" in
+			alpine)
+				if test $DISTRO_MAJMIN_VERSION -le 310; then
+					# With version 1.84.0 we have this error:
+					# Error relocating /root/.rustup/toolchains/stable-x86_64-unknown-linux-musl/bin/cargo: posix_spawn_file_actions_addchdir_np: symbol not found
+					# See https://github.com/rust-lang/rust/pull/131851#issue-2595663507
+					installCargo_cargoversion=1.83.0
+				fi
+				;;
+		esac
+	fi
 	. "$HOME/.cargo/env"
+	if test -n "$installCargo_cargoversion"; then
+		rustup default -- "$installCargo_cargoversion"
+	fi
 	if test -z "${IPE_UNINSTALL_CARGO:-}"; then
 		IPE_UNINSTALL_CARGO=y
 	fi
@@ -2609,14 +2664,20 @@ installCargo() {
 
 installNewRelic() {
 	printf '# Installing newrelic\n'
+	# see https://docs.newrelic.com/docs/apm/agents/php-agent/getting-started/php-agent-compatibility-requirements/
+	if test $PHP_MAJMIN_VERSION -le 701; then
+		installNewRelic_baseUrl=https://download.newrelic.com/php_agent/archive/10.21.0.11/
+	else
+		installNewRelic_baseUrl=https://download.newrelic.com/php_agent/release/
+	fi
 	installNewRelic_search='\bnewrelic-php[0-9.]*-[0-9]+(\.[0-9]+)*-linux'
 	case "$DISTRO" in
 		alpine)
 			installNewRelic_search="$installNewRelic_search-musl"
 			;;
 	esac
-	installNewRelic_file="$(curl -sSLf -o- https://download.newrelic.com/php_agent/release/ | sed -E 's/<[^>]*>//g' | grep -Eo "$installNewRelic_search.tar.gz" | sort | head -1)"
-	installNewRelic_url="https://download.newrelic.com/php_agent/release/$installNewRelic_file"
+	installNewRelic_file="$(curl -sSLf -o- "$installNewRelic_baseUrl" | sed -E 's/<[^>]*>//g' | grep -Eo "$installNewRelic_search.tar.gz" | sort | head -1)"
+	installNewRelic_url="$installNewRelic_baseUrl$installNewRelic_file"
 	installNewRelic_src="$(getPackageSource "$installNewRelic_url")"
 	cd -- "$installNewRelic_src"
 	NR_INSTALL_USE_CP_NOT_LN=1 NR_INSTALL_SILENT=1 ./newrelic-install install
@@ -2769,7 +2830,7 @@ EOF
 				debian@9)
 					installBundledModule_tmp="$(pwd)"
 					cd /tmp
-					apt-get download $IPE_APTGET_INSTALLOPTIONS libc-client2007e-dev
+					apt-get download libc-client2007e-dev
 					dpkg -i --ignore-depends=libssl-dev libc-client2007e-dev*
 					rm libc-client2007e-dev*
 					cd "$installBundledModule_tmp"
@@ -3170,6 +3231,8 @@ installRemoteModule() {
 			if test -z "$installRemoteModule_version"; then
 				if test $PHP_MAJMIN_VERSION -le 506; then
 					installRemoteModule_version=1.1.2
+				elif test $PHP_MAJMIN_VERSION -le 700; then
+					installRemoteModule_version=2.1.3
 				fi
 			fi
 			case "$DISTRO" in
@@ -3193,9 +3256,9 @@ installRemoteModule() {
 		geos)
 			if test -z "$installRemoteModule_path"; then
 				if test -z "$installRemoteModule_version"; then
-					installRemoteModule_version=0def35611f773c951432f1f06a155471a5cb7611
+					installRemoteModule_version=dfe1ab17b0f155cc315bc13c75689371676e02e1
 				fi
-				installRemoteModule_src="$(getPackageSource https://git.osgeo.org/gitea/geos/php-geos/archive/$installRemoteModule_version.tar.gz)"
+				installRemoteModule_src="$(getPackageSource https://github.com/libgeos/php-geos/archive/$installRemoteModule_version.tar.gz)"
 				cd "$installRemoteModule_src"
 				./autogen.sh
 				./configure
@@ -3223,6 +3286,7 @@ installRemoteModule() {
 			fi
 			;;
 		grpc)
+			installRemoteModule_cppflags='-Wno-maybe-uninitialized -Wno-attributes -Wno-return-type'
 			if test -z "$installRemoteModule_version"; then
 				if test $PHP_MAJMIN_VERSION -le 506; then
 					installRemoteModule_version=1.33.1
@@ -3234,15 +3298,11 @@ installRemoteModule() {
 						alpine@3.7 | alpine@3.8 | debian@9) # With newer version: "This package requires GCC 7 or higher"
 							installRemoteModule_version=1.52.1
 							;;
+						alpine@3.13) # With 1.71.0, 1.72.0: "src/core/call/call_filters.h:1002:69: internal compiler error: in assign_temp, at function.c:984"
+							installRemoteModule_version=1.70.0
+							;;
 					esac
 				fi
-			fi
-			if test -z "$installRemoteModule_version" || test "$installRemoteModule_version" = 1.35.0; then
-				case "$DISTRO_VERSION" in
-					alpine@3.13)
-						installRemoteModule_cppflags='-Wno-maybe-uninitialized'
-						;;
-				esac
 			fi
 			;;
 		http)
@@ -3257,7 +3317,7 @@ installRemoteModule() {
 				if ! test -e /usr/local/lib/libidnkit.so; then
 					installRemoteModule_src="$(getPackageSource https://jprs.co.jp/idn/idnkit-2.3.tar.bz2)"
 					cd -- "$installRemoteModule_src"
-					./configure
+					CFLAGS=-Wno-incompatible-pointer-types ./configure
 					make -j$(getProcessorCount) install
 					cd - >/dev/null
 				fi
@@ -3277,6 +3337,13 @@ installRemoteModule() {
 			addConfigureOption with-kerberos yes
 			# Include SSL Support
 			addConfigureOption with-imap-ssl yes
+			;;
+		imagick)
+			if test -z "$installRemoteModule_version"; then
+				if test $PHP_MAJMIN_VERSION -lt 506; then
+					installRemoteModule_version=3.7.0
+				fi
+			fi
 			;;
 		inotify)
 			if test -z "$installRemoteModule_version"; then
@@ -3299,7 +3366,7 @@ installRemoteModule() {
 					git submodule update -q
 					mkdir -p build
 					cd build
-					cmake -DCMAKE_BUILD_TYPE=Release .. -Wno-dev
+					CFLAGS='-Wno-incompatible-pointer-types -Wno-stringop-overflow -Wno-discarded-qualifiers' cmake -DCMAKE_BUILD_TYPE=Release .. -Wno-dev
 					make clean
 					make -j$(getProcessorCount) install
 				)
@@ -3451,6 +3518,8 @@ installRemoteModule() {
 					installRemoteModule_version=1.11.1
 				elif test $PHP_MAJMIN_VERSION -le 703; then
 					installRemoteModule_version=1.16.2
+				elif test $PHP_MAJMIN_VERSION -le 800; then
+					installRemoteModule_version=1.20.1
 				fi
 			fi
 			if test -z "$installRemoteModule_version" || test $(compareVersions "$installRemoteModule_version" 1.17.0) -ge 0; then
@@ -3520,6 +3589,8 @@ installRemoteModule() {
 					installRemoteModule_version=4.10.0
 				elif test $PHP_MAJMIN_VERSION -lt 801; then
 					installRemoteModule_version=22.0.0
+				elif test $PHP_MAJMIN_VERSION -lt 802; then
+					installRemoteModule_version=22.1.2
 				fi
 			else
 				installRemoteModule_version="$(resolvePeclStabilityVersion "$installRemoteModule_module" "$installRemoteModule_version")"
@@ -3615,6 +3686,11 @@ installRemoteModule() {
 				addConfigureOption enable-swoole-curl yes
 			fi
 			;;
+		operator)
+			if test -z "$installRemoteModule_version"; then
+				installRemoteModule_version=beta
+			fi
+			;;
 		parallel)
 			if test -z "$installRemoteModule_version"; then
 				if test $PHP_MAJMIN_VERSION -le 701; then
@@ -3653,6 +3729,7 @@ installRemoteModule() {
 					installRemoteModule_version=5.4.0
 				fi
 			fi
+			installRemoteModule_cppflags='-Wno-incompatible-pointer-types'
 			;;
 		php_trie)
 			if ! test -f /usr/local/include/hat-trie/include/tsl/htrie_map.h; then
@@ -3839,7 +3916,7 @@ installRemoteModule() {
 		saxon)
 			if test -z "$installRemoteModule_version"; then
 				if test $PHP_MAJMIN_VERSION -ge 800; then
-					installRemoteModule_version='12.4.2'
+					installRemoteModule_version='12.5.0'
 				else
 					installRemoteModule_version='12.3'
 				fi
@@ -3880,6 +3957,18 @@ installRemoteModule() {
 				fi
 			fi
 			;;
+		seaslog)
+			installRemoteModule_cppflags='-Wno-incompatible-pointer-types'
+			;;
+		smbclient)
+			if test -z "$installRemoteModule_version"; then
+				if test $PHP_MAJMIN_VERSION -le 506; then
+					installRemoteModule_version=1.1.1
+				elif test $PHP_MAJMIN_VERSION -le 703; then
+					installRemoteModule_version=1.1.2
+				fi
+			fi
+			;;
 		snappy)
 			if test -z "$installRemoteModule_path"; then
 				if test -z "$installRemoteModule_version"; then
@@ -3899,6 +3988,8 @@ installRemoteModule() {
 				if test -z "$installRemoteModule_version"; then
 					if test $PHP_MAJMIN_VERSION -le 800; then
 						installRemoteModule_version=0.9.0
+					elif test $PHP_MAJMIN_VERSION -le 801; then
+						installRemoteModule_version=0.10.0
 					else
 						installRemoteModule_version=0.11.0
 					fi
@@ -3944,7 +4035,7 @@ installRemoteModule() {
 		spx)
 			if test -z "$installRemoteModule_path"; then
 				if test -z "$installRemoteModule_version"; then
-					installRemoteModule_version=v0.4.17
+					installRemoteModule_version=v0.4.18
 				fi
 				if test "${installRemoteModule_version%.*}" = "$installRemoteModule_version"; then
 					installRemoteModule_displayVersion="$installRemoteModule_version"
@@ -4050,34 +4141,62 @@ installRemoteModule() {
 					fi
 					;;
 			esac
-			if test $PHP_MAJMIN_VERSION -ge 800; then
-				# see https://github.com/swoole/swoole-src/issues/5365
-				installRemoteModule_curl=no
-			else
-				installRemoteModule_curl=yes
-			fi
 			if test $PHP_THREADSAFE -eq 1; then
 				installRemoteModule_zts=yes
 			else
 				installRemoteModule_zts=no
 			fi
 			installRemoteModule_sqlite=yes
+			installRemoteModule_iouring=no
+			installRemoteModule_curl=yes
 			case "$DISTRO" in
 				alpine)
 					if test $DISTRO_MAJMIN_VERSION -lt 317; then
 						# we need sqlite3 >= 3.7.7
 						installRemoteModule_sqlite=no
 					fi
+					case "${IPE_SWOOLE_WITHOUT_IOURING:-}" in
+						1 | y* | Y*) ;;
+						*)
+							# iouring support in swoole 6 requires liburing 2.5+: available since Alpine 3.19
+							# but with Alpine 3.19 we have a "invalid use of incomplete type 'const struct statx'" error
+							if test $DISTRO_MAJMIN_VERSION -ge 320; then
+								installRemoteModule_iouring=yes
+							fi
+							;;
+					esac
 					;;
 				debian)
+					if test $PHP_MAJMIN_VERSION -ge 800; then
+						# see https://github.com/swoole/swoole-src/issues/5365
+						installRemoteModule_curl=no
+					fi
 					if test $DISTRO_MAJMIN_VERSION -lt 1200; then
 						# we need sqlite3 >= 3.7.7
 						installRemoteModule_sqlite=no
 					fi
+					case "${IPE_SWOOLE_WITHOUT_IOURING:-}" in
+						1 | y* | Y*) ;;
+						*)
+							if test $DISTRO_VERSION_NUMBER -ge 13; then
+								# iouring support in swoole 6 requires liburing 2.5+: available since Debian Trixie (13)
+								installRemoteModule_iouring=yes
+							fi
+							;;
+					esac
+					;;
+			esac
+			installRemoteModule_zstd=yes
+			case "$DISTRO" in
+				debian)
+					if test $DISTRO_VERSION_NUMBER -lt 11; then
+						# swoole 6 requires libzstd >= 1.4.0, but on debian 10 (buster) we have 1.3.8
+						installRemoteModule_zstd=no
+					fi
 					;;
 			esac
 			if test $(compareVersions "$installRemoteModule_version" 6.0.0) -ge 0; then
-				# enable sockets supports?
+				# enable sockets support?
 				addConfigureOption enable-sockets $installRemoteModule_sockets
 				# enable openssl support?
 				addConfigureOption enable-openssl $installRemoteModule_openssl
@@ -4089,6 +4208,8 @@ installRemoteModule() {
 				addConfigureOption enable-cares yes
 				# enable brotli support?
 				addConfigureOption enable-brotli yes
+				# enable zstd support?
+				addConfigureOption enable-zstd $installRemoteModule_zstd
 				# enable PostgreSQL database support?
 				addConfigureOption enable-swoole-pgsql yes
 				# enable ODBC database support?
@@ -4100,7 +4221,7 @@ installRemoteModule() {
 				# enable swoole thread support (need php zts support)?
 				addConfigureOption enable-swoole-thread $installRemoteModule_zts
 				# enable iouring for file async support?
-				addConfigureOption enable-iouring yes
+				addConfigureOption enable-iouring $installRemoteModule_iouring
 			elif test $(compareVersions "$installRemoteModule_version" 5.1.0) -ge 0; then
 				# enable sockets supports?
 				addConfigureOption enable-sockets $installRemoteModule_sockets
@@ -4292,9 +4413,12 @@ installRemoteModule() {
 			fi
 			;;
 		tensor)
+			installRemoteModule_cppflags='-Wno-incompatible-pointer-types'
 			if test -z "$installRemoteModule_version"; then
 				if test $PHP_MAJMIN_VERSION -le 703; then
 					installRemoteModule_version=2.2.3
+				elif test $PHP_MAJMIN_VERSION -le 704; then
+					installRemoteModule_version=3.0.5
 				fi
 			fi
 			case "$DISTRO" in
@@ -4359,6 +4483,7 @@ installRemoteModule() {
 			installRemoteModule_manuallyInstalled=1
 			;;
 		uopz)
+			installRemoteModule_cppflags='-Wno-incompatible-pointer-types'
 			if test -z "$installRemoteModule_version"; then
 				if test $PHP_MAJMIN_VERSION -le 506; then
 					installRemoteModule_version=2.0.7
@@ -4476,6 +4601,17 @@ installRemoteModule() {
 				addConfigureOption enable-reader yes
 			fi
 			;;
+		xmldiff)
+			installRemoteModule_version="$(resolvePeclStabilityVersion "$installRemoteModule_module" "$installRemoteModule_version")"
+			if test -z "$installRemoteModule_version"; then
+				case "$DISTRO_VERSION" in
+					debian@8)
+						# The gcc version of Debian Jessie is too old => error: 'nullptr' was not declared in this scope
+						installRemoteModule_version=1.1.4
+						;;
+				esac
+			fi
+			;;
 		xmlrpc)
 			if test -z "$installRemoteModule_version"; then
 				installRemoteModule_version=beta
@@ -4552,8 +4688,6 @@ installRemoteModule() {
 			if test -z "$installRemoteModule_version"; then
 				if test $PHP_MAJMIN_VERSION -le 506; then
 					installRemoteModule_version=0.5.0
-				else
-					installRemoteModule_version=alpha
 				fi
 			fi
 			installRemoteModule_version="$(resolvePeclStabilityVersion "$installRemoteModule_module" "$installRemoteModule_version")"
@@ -4808,23 +4942,18 @@ removeStringFromList() {
 }
 
 # Invoke apt-get update
-#
-# Set:
-# IPE_APTGET_INSTALLOPTIONS
 invokeAptGetUpdate() {
 	if test -n "${IPE_APTGETUPDATE_ALREADY:-}"; then
-		DEBIAN_FRONTEND=noninteractive apt-get update -q
+		apt-get update -q
 		return
 	fi
-	IPE_APTGET_INSTALLOPTIONS=''
-	invokeAptGetUpdate_fixdistro=''
+	IPE_APTGETUPDATE_ALREADY=y
 	if grep -q 'VERSION="8 (jessie)"' /etc/os-release; then
 		invokeAptGetUpdate_fixdistro=jessie
 	elif grep -q 'VERSION="9 (stretch)"' /etc/os-release; then
 		invokeAptGetUpdate_fixdistro=stretch
 	else
-		IPE_APTGETUPDATE_ALREADY=y
-		DEBIAN_FRONTEND=noninteractive apt-get update -q
+		invokeAptGetUpdate
 		return
 	fi
 	# See https://www.debian.org/distrib/archive.en.html for a list of mirrors
@@ -4839,19 +4968,18 @@ invokeAptGetUpdate() {
 	sed -ri "s;^(\s*deb\s+)http://security.debian.org/debian-security;\1$IPE_DEB_ARCHIVE_SECURITY;" /etc/apt/sources.list
 	sed -ri "s;^(\s*deb\s+)http://security.debian.org;\1$IPE_DEB_ARCHIVE_SECURITY;" /etc/apt/sources.list
 	invokeAptGetUpdate_tmp="$(mktemp)"
-	DEBIAN_FRONTEND=noninteractive apt-get update -q 2>"$invokeAptGetUpdate_tmp"
+	apt-get update -q 2>"$invokeAptGetUpdate_tmp"
 	if test -s "$invokeAptGetUpdate_tmp"; then
 		cat "$invokeAptGetUpdate_tmp" >&2
 		if grep -qE ' KEYEXPIRED [0-9]' "$invokeAptGetUpdate_tmp"; then
-			IPE_APTGET_INSTALLOPTIONS='-o APT::Get::AllowUnauthenticated=true'
 			echo '############' >&2
 			echo '# WARNING! #' >&2
 			echo '############' >&2
 			echo 'apt packages will be installed without checking authenticity!' >&2
+			printf 'APT::Get::AllowUnauthenticated "true";\n' >>/etc/apt/apt.conf.d/99unauthenticated
 		fi
 	fi
 	rm "$invokeAptGetUpdate_tmp"
-	IPE_APTGETUPDATE_ALREADY=y
 }
 
 # Fix the Let's Encrypt CA certificates on old distros
@@ -4882,7 +5010,7 @@ fixLetsEncrypt() {
 					invokeAptGetUpdate
 				fi
 				printf -- '- installing newer ca-certificates package\n'
-				DEBIAN_FRONTEND=noninteractive apt-get install -qqy --no-install-recommends ${IPE_APTGET_INSTALLOPTIONS:-} ca-certificates
+				apt-get install -qqy --no-install-recommends ca-certificates
 			fi
 			;;
 		*)
@@ -4903,8 +5031,12 @@ fixLetsEncrypt() {
 # Cleanup everything at the end of the execution
 cleanup() {
 	if test "${IPE_UNINSTALL_CARGO:-}" = y; then
-		. "$HOME/.cargo/env"
-		rustup self uninstall -y
+		if test -f "$HOME/.cargo/env"; then
+			. "$HOME/.cargo/env"
+		fi
+		if command -v rustup >/dev/null; then
+			rustup self uninstall -y
+		fi
 	fi
 	if test -n "$UNNEEDED_PACKAGE_LINKS"; then
 		printf '### REMOVING UNNEEDED PACKAGE LINKS ###\n'
@@ -4927,11 +5059,11 @@ cleanup() {
 		debian)
 			if test -n "$PACKAGES_VOLATILE"; then
 				printf '### REMOVING UNNEEDED PACKAGES ###\n'
-				DEBIAN_FRONTEND=noninteractive apt-get remove --purge -y $PACKAGES_VOLATILE
+				apt-get remove --purge -y $PACKAGES_VOLATILE
 			fi
 			if test -n "$PACKAGES_PREVIOUS"; then
 				printf '### RESTORING PREVIOUSLY INSTALLED PACKAGES ###\n'
-				DEBIAN_FRONTEND=noninteractive apt-get install -qqy --no-install-recommends --no-upgrade $IPE_APTGET_INSTALLOPTIONS $PACKAGES_PREVIOUS
+				apt-get install -qqy --no-install-recommends --no-upgrade $PACKAGES_PREVIOUS
 			fi
 			;;
 	esac
@@ -4956,6 +5088,8 @@ cleanup() {
 	esac
 }
 
+DEBIAN_FRONTEND=noninteractive
+export DEBIAN_FRONTEND
 resetIFS
 mkdir -p /tmp/src
 mkdir -p /tmp/pickle.tmp
