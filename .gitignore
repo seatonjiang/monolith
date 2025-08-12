@@ -84,4 +84,16 @@ Temporary Items
 
 #################### Custom.gitignore ####################
 
-!.gitkeep
+# Docker volumes and data
+/data/mariadb/*
+/data/redis/*
+/data/composer/*
+!data/*/.gitkeep
+
+# Docker logs
+/logs/openresty/*
+/logs/php/*
+!logs/*/.gitkeep
+
+# Docker environment files
+.env

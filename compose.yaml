@@ -3,19 +3,20 @@ services:
     build:
       context: ./services/php
       args:
-        - PHP_VERSION=${PHP_VERSION}
-        - PHP_EXTENSIONS=${PHP_EXTENSIONS}
-        - ALPINE_MIRROR=${ALPINE_MIRROR}
+        - PHP_VERSION=${PHP_VERSION:-8.4-fpm-alpine}
+        - PHP_EXTENSIONS=${PHP_EXTENSIONS:-redis,memcached,opcache,pdo_mysql,mysqli,zip,gd,imagick,igbinary,bz2,exif,bcmath,intl}
+        - ALPINE_MIRROR=${ALPINE_MIRROR:-mirrors.cloud.tencent.com}
+        - PHP_COMPOSER_MIRROR=${PHP_COMPOSER_MIRROR:-mirrors.cloud.tencent.com}
     container_name: php
     restart: always
     volumes:
       - ./wwwroot/:/var/www/:rw
       - ./logs/php/:/var/log/php/:rw
       - ./data/composer/:/tmp/composer/:rw
-      - ./services/php/php-${PHP_ENVIRONMENT}.ini:/usr/local/etc/php/php.ini:ro
+      - ./services/php/php-${PHP_ENVIRONMENT:-production}.ini:/usr/local/etc/php/php.ini:ro
       - ./services/php/www.conf:/usr/local/etc/php-fpm.d/www.conf:ro
     environment:
-      - TZ=${TIME_ZONE}
+      - TZ=${TIME_ZONE:-Asia/Shanghai}
     networks:
       monolith:
         ipv4_address: 172.16.24.11
@@ -24,13 +25,13 @@ services:
     build:
       context: ./services/openresty
       args:
-        - OPENRESTY_VERSION=${OPENRESTY_VERSION}
-        - ALPINE_MIRROR=${ALPINE_MIRROR}
+        - OPENRESTY_VERSION=${OPENRESTY_VERSION:-1.27.1.2-3-alpine}
+        - ALPINE_MIRROR=${ALPINE_MIRROR:-mirrors.cloud.tencent.com}
     container_name: openresty
     restart: always
     ports:
-      - 0.0.0.0:${OPENRESTY_HTTP_PORT}:80
-      - 0.0.0.0:${OPENRESTY_HTTPS_PORT}:443
+      - "${OPENRESTY_HTTP_PORT:-80}:80"
+      - "${OPENRESTY_HTTPS_PORT:-443}:443"
     volumes:
       - ./wwwroot/:/var/www/:rw
       - ./logs/openresty/:/var/log/nginx/:rw
@@ -41,13 +42,13 @@ services:
       - ./services/openresty/fastcgi-php.conf:/usr/local/openresty/nginx/conf/fastcgi-php.conf:ro
       - ./services/openresty/fastcgi_params:/usr/local/openresty/nginx/conf/fastcgi_params:ro
     environment:
-      - TZ=${TIME_ZONE}
+      - TZ=${TIME_ZONE:-Asia/Shanghai}
     networks:
       monolith:
         ipv4_address: 172.16.24.21
 
   mariadb:
-    image: mariadb:${DB_MARIADB_VERSION}
+    image: mariadb:${MARIADB_VERSION:-11.8}
     container_name: mariadb
     restart: always
     volumes:
@@ -55,8 +56,8 @@ services:
       - ./services/mariadb/mariadb.cnf:/etc/mysql/conf.d/my.cnf:ro
       - ./services/mariadb/scripts/:/docker-entrypoint-initdb.d/:ro
     environment:
-      - TZ=${TIME_ZONE}
-      - MARIADB_DATABASE=${DB_MARIADB_DATABASE_NAME}
+      - TZ=${TIME_ZONE:-Asia/Shanghai}
+      - MARIADB_DATABASE=${MARIADB_DATABASE_NAME:-monolith}
       - MARIADB_USER_FILE=/run/secrets/mariadb-user-name
       - MARIADB_PASSWORD_FILE=/run/secrets/mariadb-user-pwd
       - MARIADB_ROOT_PASSWORD_FILE=/run/secrets/mariadb-root-pwd
@@ -74,17 +75,17 @@ services:
         ipv4_address: 172.16.24.31
 
   phpmyadmin:
-    image: phpmyadmin:${PHPMYADMIN_VERSION}
+    image: phpmyadmin:${PHPMYADMIN_VERSION:-5.2}
     container_name: phpmyadmin
     restart: always
+    ports:
+      - "${PHPMYADMIN_WEB_PORT:-28080}:80"
     environment:
-      - TZ=${TIME_ZONE}
+      - TZ=${TIME_ZONE:-Asia/Shanghai}
       - PMA_ARBITRARY=0
       - PMA_HOST=mariadb
       - PMA_PORT=3306
-      - UPLOAD_LIMIT=${PHPMYADMIN_UPLOAD_LIMIT}
-    ports:
-      - 0.0.0.0:${PHPMYADMIN_WEB_PORT}:80
+      - UPLOAD_LIMIT=${PHPMYADMIN_UPLOAD_LIMIT:-128M}
     depends_on:
       - mariadb
     networks:
@@ -92,7 +93,7 @@ services:
         ipv4_address: 172.16.24.41
 
   memcached:
-    image: memcached:${MEMCACHED_VERSION}
+    image: memcached:${MEMCACHED_VERSION:-1.6-alpine}
     container_name: memcached
     restart: always
     networks:
@@ -103,14 +104,14 @@ services:
     build:
       context: ./services/redis
       args:
-        - REDIS_VERSION=${REDIS_VERSION}
+        - REDIS_VERSION=${REDIS_VERSION:-8.2-alpine}
     container_name: redis
     restart: always
     volumes:
       - ./data/redis/:/data/:rw
       - ./services/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
     environment:
-      - TZ=${TIME_ZONE}
+      - TZ=${TIME_ZONE:-Asia/Shanghai}
     networks:
       monolith:
         ipv4_address: 172.16.24.43
