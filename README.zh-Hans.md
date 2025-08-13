@@ -74,6 +74,8 @@ docker compose up -d
 - **本地环境**：`http://localhost`
 - **线上环境**：`http://服务器 IP 地址`
 
+> **提示**：默认站点目录为 `wwwroot/default`，为了提高安全性，在生产环境中应取消注释 `default.conf` 中的 `return 403;` 配置（位于 `services/openresty/conf.d/default.conf` 文件中），并删除或备份默认站点目录。这样可以防止未经授权的访问和潜在的安全风险。
+
 ## 📂 目录结构
 
 项目目录结构说明：
