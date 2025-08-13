@@ -1,0 +1,12 @@
+/var/log/redis/*.log {
+    daily
+    compress
+    rotate 7
+    missingok
+    notifempty
+    dateext
+    sharedscripts
+    postrotate
+        [ -f /var/run/redis/redis.pid ] && kill -USR1 "$(cat /var/run/redis/redis.pid)"
+    endscript
+}

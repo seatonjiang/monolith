@@ -105,6 +105,7 @@ services:
       context: ./services/redis
       args:
         - REDIS_VERSION=${REDIS_VERSION:-8.2-alpine}
+        - ALPINE_MIRROR=${ALPINE_MIRROR:-mirrors.cloud.tencent.com}
     container_name: redis
     restart: always
     volumes:
