@@ -25,10 +25,8 @@ RUN php_extension_list=$(echo "${PHP_EXTENSIONS}" | sed 's/,/ /g') && \
 # 安装 Composer
 ARG PHP_COMPOSER_MIRROR
 RUN curl -o /usr/bin/composer https://${PHP_COMPOSER_MIRROR:-mirrors.cloud.tencent.com}/composer/composer.phar && \
-    chmod +x /usr/bin/composer
-
-# 替换 Composer 镜像源
-RUN composer config -g repos.packagist composer https://${PHP_COMPOSER_MIRROR:-mirrors.cloud.tencent.com}/composer/
+    chmod +x /usr/bin/composer && \
+    composer config -g repos.packagist composer https://${PHP_COMPOSER_MIRROR:-mirrors.cloud.tencent.com}/composer/
 
 # 设置 Composer 环境变量
 ENV COMPOSER_HOME=/tmp/composer
