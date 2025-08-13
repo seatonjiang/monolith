@@ -41,7 +41,7 @@ PHP_EXTENSIONS=redis,memcached,opcache,pdo_mysql,mysqli,zip,gd,imagick,bz2,exif,
 PHP_ENVIRONMENT=production
 
 # MariaDB 数据库名称
-DB_MARIADB_DATABASE_NAME=monolith
+MARIADB_DATABASE_NAME=monolith
 
 # phpMyAdmin 访问端口
 PHPMYADMIN_WEB_PORT=28080

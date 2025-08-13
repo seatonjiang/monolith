@@ -13,7 +13,7 @@ services:
       - ./wwwroot/:/var/www/:rw
       - ./logs/php/:/var/log/php/:rw
       - ./data/composer/:/tmp/composer/:rw
-      - ./services/php/php-${PHP_ENVIRONMENT:-production}.ini:/usr/local/etc/php/php.ini:ro
+      - ./services/php/php.ini:/usr/local/etc/php/php.ini:ro
       - ./services/php/www.conf:/usr/local/etc/php-fpm.d/www.conf:ro
     environment:
       - TZ=${TIME_ZONE:-Asia/Shanghai}
@@ -110,6 +110,7 @@ services:
     volumes:
       - ./data/redis/:/data/:rw
       - ./services/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - ./logs/redis/:/var/log/redis/:rw
     environment:
       - TZ=${TIME_ZONE:-Asia/Shanghai}
     networks:
