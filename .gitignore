@@ -93,6 +93,8 @@ Temporary Items
 # Docker logs
 /logs/openresty/*
 /logs/php/*
+/logs/mariadb/*
+/logs/redis/*
 !logs/*/.gitkeep
 
 # Docker environment files
