@@ -53,6 +53,7 @@ services:
     restart: always
     volumes:
       - ./data/mariadb/:/var/lib/mysql/:rw
+      - ./logs/mariadb/:/var/log/mysql/:rw
       - ./services/mariadb/mariadb.cnf:/etc/mysql/conf.d/my.cnf:ro
       - ./services/mariadb/scripts/:/docker-entrypoint-initdb.d/:ro
     environment:
