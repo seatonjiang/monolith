@@ -233,7 +233,7 @@ docker exec -it openresty nginx -s reload
 
 ### PHP 安装扩展
 
-有两种方式可以安装PHP扩展：
+有两种方式可以安装 PHP 扩展：
 
 #### 方式一：通过环境变量安装（推荐）
 
@@ -245,7 +245,7 @@ docker compose build php
 
 #### 方式二：进入容器快速安装
 
-也可以直接进入PHP容器，使用 `install-php-extensions` 命令快速安装扩展：
+也可以直接进入 PHP 容器，使用 `install-php-extensions` 命令快速安装扩展：
 
 ```bash
 docker exec -it php /bin/sh
