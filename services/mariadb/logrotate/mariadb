@@ -1,4 +1,4 @@
-/var/log/nginx/*.log {
+/var/log/mysql/*.log {
     daily
     compress
     rotate 30
@@ -7,6 +7,6 @@
     dateext
     sharedscripts
     postrotate
-        [ -f /var/run/nginx.pid ] && kill -USR1 "$(cat /var/run/nginx.pid)" || true
+        [ -f /var/run/mysqld/mysqld.pid ] && kill -USR1 "$(cat /var/run/mysqld/mysqld.pid)" || true
     endscript
 }

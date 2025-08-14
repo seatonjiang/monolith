@@ -51,7 +51,11 @@ services:
         ipv4_address: 172.16.24.11
 
   mariadb:
-    image: mariadb:${MARIADB_VERSION:-11.8}
+    build:
+      context: ./services/mariadb
+      args:
+        - MARIADB_VERSION=${MARIADB_VERSION:-11.8}
+        - UBUNTU_MIRROR=${UBUNTU_MIRROR:-mirrors.cloud.tencent.com}
     container_name: mariadb
     restart: always
     volumes:
@@ -59,6 +63,7 @@ services:
       - ./logs/mariadb/:/var/log/mysql/:rw
       - ./services/mariadb/mariadb.cnf:/etc/mysql/conf.d/my.cnf:ro
       - ./services/mariadb/scripts/:/docker-entrypoint-initdb.d/:ro
+      - ./services/mariadb/logrotate/mariadb:/etc/logrotate.d/mariadb:ro
     environment:
       - TZ=${TIME_ZONE:-Asia/Shanghai}
       - MARIADB_DATABASE=${MARIADB_DATABASE_NAME:-monolith}
