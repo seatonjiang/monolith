@@ -11,6 +11,7 @@ RUN apk update && apk --no-cache add \
     shadow \
     ghostscript \
     imagemagick \
+    logrotate \
     && rm -rf /var/cache/apk/*
 
 # 复制并设置 PHP 扩展安装脚本
@@ -38,5 +39,8 @@ RUN groupmod -o -g 1000 www-data && \
 # 设置工作目录
 WORKDIR /var/www
 
+# 设置日志轮转定时任务
+RUN echo "0 0 * * * logrotate -f /etc/logrotate.d/php" >> /etc/crontabs/root
+
 # 启动 PHP-FPM
-CMD ["php-fpm"]
+CMD ["sh", "-c", "crond -b && php-fpm"]

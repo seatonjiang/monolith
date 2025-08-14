@@ -240,7 +240,15 @@ docker exec -it openresty nginx -s reload
 使用 `install-php-extensions` 安装 PHP 扩展，需要在 `.env` 配置文件中修改 `PHP_EXTENSIONS` 变量，然后重新构建 PHP 容器：
 
 ```bash
-docker compose build php
+# 停止并删除现有的 PHP 容器
+docker compose stop php
+docker compose rm -f php
+
+# 重新构建 PHP 容器
+docker compose build --no-cache php
+
+# 启动新构建的 PHP 容器
+docker compose up -d php
 ```
 
 #### 方式二：进入容器快速安装

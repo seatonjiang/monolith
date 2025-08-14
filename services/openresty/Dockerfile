@@ -11,9 +11,6 @@ RUN apk update && apk --no-cache add \
     logrotate \
     && rm -rf /var/cache/apk/*
 
-# 复制日志轮转配置
-COPY logrotate/openresty /etc/logrotate.d/openresty
-
 # 设置日志轮转定时任务
 RUN echo "0 0 * * * logrotate -f /etc/logrotate.d/openresty" >> /etc/crontabs/root
 

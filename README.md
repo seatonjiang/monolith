@@ -240,7 +240,15 @@ There are two ways to install PHP extensions:
 Use `install-php-extensions` to install PHP extensions by modifying the `PHP_EXTENSIONS` variable in the `.env` configuration file, then rebuild the PHP container:
 
 ```bash
-docker compose build php
+# Stop and remove the existing PHP container
+docker compose stop php
+docker compose rm -f php
+
+# Rebuild the PHP container
+docker compose build --no-cache php
+
+# Start the newly built PHP container
+docker compose up -d php
 ```
 
 #### Method 2: Quick Installation by Entering the Container

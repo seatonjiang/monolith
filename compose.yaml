@@ -14,12 +14,14 @@ services:
       - ./logs/php/:/var/log/php/:rw
       - ./data/composer/:/tmp/composer/:rw
       - ./services/php/php.ini:/usr/local/etc/php/php.ini:ro
+      - ./services/php/php-fpm.conf:/usr/local/etc/php-fpm.conf:ro
       - ./services/php/www.conf:/usr/local/etc/php-fpm.d/www.conf:ro
+      - ./services/php/logrotate/php:/etc/logrotate.d/php:ro
     environment:
       - TZ=${TIME_ZONE:-Asia/Shanghai}
     networks:
       monolith:
-        ipv4_address: 172.16.24.11
+        ipv4_address: 172.16.24.10
 
   openresty:
     build:
@@ -41,11 +43,12 @@ services:
       - ./services/openresty/openresty.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
       - ./services/openresty/fastcgi-php.conf:/usr/local/openresty/nginx/conf/fastcgi-php.conf:ro
       - ./services/openresty/fastcgi_params:/usr/local/openresty/nginx/conf/fastcgi_params:ro
+      - ./services/openresty/logrotate/openresty:/etc/logrotate.d/openresty:ro
     environment:
       - TZ=${TIME_ZONE:-Asia/Shanghai}
     networks:
       monolith:
-        ipv4_address: 172.16.24.21
+        ipv4_address: 172.16.24.11
 
   mariadb:
     image: mariadb:${MARIADB_VERSION:-11.8}
@@ -66,14 +69,9 @@ services:
       - mariadb-root-pwd
       - mariadb-user-name
       - mariadb-user-pwd
-    healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
     networks:
       monolith:
-        ipv4_address: 172.16.24.31
+        ipv4_address: 172.16.24.12
 
   phpmyadmin:
     image: phpmyadmin:${PHPMYADMIN_VERSION:-5.2}
@@ -91,7 +89,7 @@ services:
       - mariadb
     networks:
       monolith:
-        ipv4_address: 172.16.24.41
+        ipv4_address: 172.16.24.13
 
   memcached:
     image: memcached:${MEMCACHED_VERSION:-1.6-alpine}
@@ -99,7 +97,7 @@ services:
     restart: always
     networks:
       monolith:
-        ipv4_address: 172.16.24.42
+        ipv4_address: 172.16.24.14
 
   redis:
     build:
@@ -113,11 +111,12 @@ services:
       - ./data/redis/:/data/:rw
       - ./services/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
       - ./logs/redis/:/var/log/redis/:rw
+      - ./services/redis/logrotate/redis:/etc/logrotate.d/redis:ro
     environment:
       - TZ=${TIME_ZONE:-Asia/Shanghai}
     networks:
       monolith:
-        ipv4_address: 172.16.24.43
+        ipv4_address: 172.16.24.15
 
 networks:
   monolith:
@@ -125,7 +124,9 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: 172.16.24.0/24
+        - subnet: 172.16.24.0/25
+          gateway: 172.16.24.1
+          ip_range: 172.16.24.0/26
 
 secrets:
   mariadb-root-pwd:

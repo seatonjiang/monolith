@@ -14,9 +14,6 @@ RUN apk update && apk --no-cache add \
 # 修复 PID 文件权限问题
 RUN mkdir -p /var/run/redis && chown redis:redis /var/run/redis
 
-# 复制日志轮转配置
-COPY logrotate/redis /etc/logrotate.d/redis
-
 # 设置日志轮转定时任务
 RUN echo "0 0 * * * logrotate -f /etc/logrotate.d/redis" >> /etc/crontabs/root
 
