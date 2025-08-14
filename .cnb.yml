@@ -1,0 +1,12 @@
+main:
+  push:
+    - imports:
+        - https://cnb.cool/seatonjiang/secret-key/-/blob/main/github.yaml
+      stages:
+        - name: Synchronize the Repository to GitHub
+          image: tencentcom/git-sync
+          settings:
+            target_url: https://github.com/seatonjiang/monolith.git
+            auth_type: https
+            username: ${GITHUB_USERNAME}
+            password: ${GITHUB_ACCESS_TOKEN}
