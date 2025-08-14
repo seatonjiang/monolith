@@ -330,7 +330,7 @@ upload_max_filesize = 256M      # 上传文件最大尺寸
 
 # 错误处理
 error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT   # 错误报告级别
-error_log = /var/log/php/error.log                    # 错误日志位置
+error_log = /var/log/php/php-error.log                # 错误日志位置
 
 # 区域设置
 date.timezone = Asia/Shanghai   # 时区设置
