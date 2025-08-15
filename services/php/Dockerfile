@@ -23,15 +23,6 @@ ARG PHP_EXTENSIONS
 RUN php_extension_list=$(echo "${PHP_EXTENSIONS}" | sed 's/,/ /g') && \
     install-php-extensions ${php_extension_list}
 
-# 安装 Composer
-ARG PHP_COMPOSER_MIRROR
-RUN curl -o /usr/bin/composer https://${PHP_COMPOSER_MIRROR:-mirrors.cloud.tencent.com}/composer/composer.phar && \
-    chmod +x /usr/bin/composer && \
-    composer config -g repos.packagist composer https://${PHP_COMPOSER_MIRROR:-mirrors.cloud.tencent.com}/composer/
-
-# 设置 Composer 环境变量
-ENV COMPOSER_HOME=/tmp/composer
-
 # 设置用户和组权限
 RUN groupmod -o -g 1000 www-data && \
     usermod -o -u 1000 -g www-data www-data

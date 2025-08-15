@@ -6,13 +6,11 @@ services:
         - PHP_VERSION=${PHP_VERSION:-8.4-fpm-alpine}
         - PHP_EXTENSIONS=${PHP_EXTENSIONS:-redis,memcached,opcache,pdo_mysql,mysqli,zip,gd,imagick,igbinary,bz2,exif,bcmath,intl}
         - ALPINE_MIRROR=${ALPINE_MIRROR:-mirrors.cloud.tencent.com}
-        - PHP_COMPOSER_MIRROR=${PHP_COMPOSER_MIRROR:-mirrors.cloud.tencent.com}
     container_name: php
     restart: always
     volumes:
       - ./wwwroot/:/var/www/:rw
       - ./logs/php/:/var/log/php/:rw
-      - ./data/composer/:/tmp/composer/:rw
       - ./services/php/php.ini:/usr/local/etc/php/php.ini:ro
       - ./services/php/php-fpm.conf:/usr/local/etc/php-fpm.conf:ro
       - ./services/php/www.conf:/usr/local/etc/php-fpm.d/www.conf:ro

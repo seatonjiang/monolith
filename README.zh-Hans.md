@@ -83,7 +83,6 @@ docker compose up -d
 ```bash
 monolith
 ├── data                      数据持久化目录
-│   ├── composer              Composer 数据目录
 │   ├── mariadb               MariaDB 数据目录
 │   └── redis                 Redis 数据目录
 ├── logs                      日志存储目录
@@ -262,24 +261,6 @@ install-php-extensions apcu
 
 > **提示**：支持的扩展列表请参考：[docker-php-extension-installer](https://github.com/mlocati/docker-php-extension-installer#supported-php-extensions)
 
-### Composer 镜像源相关
-
-#### 默认镜像源
-
-默认使用腾讯云镜像源（mirrors.cloud.tencent.com），这是一个公网与内网统一域名，用于解决在不同网络环境下的访问问题：
-
-- 如果在公网环境中，会自动通过公网访问。
-- 如果在腾讯云 VPC 内部环境且 DNS 保持了云上默认配置，会优先解析到内网链路，提供更稳定快速的服务。
-
-#### 更换镜像源
-
-如需更换镜像源，例如更换为上海交通大学镜像源，执行以下命令：
-
-```bash
-docker exec -it php /bin/sh
-composer config -g repos.packagist composer https://packagist.mirrors.sjtug.sjtu.edu.cn
-```
-
 ### PHP 开启慢脚本日志
 
 修改 `services/php/www.conf` 文件，找到下面两行内容并取消注释：
@@ -320,17 +301,18 @@ requirepass your_strong_password
 
 ```ini
 # 执行时间和内存限制
-max_execution_time = 300        # 脚本最大执行时间（秒）
+max_execution_time = 180        # 脚本最大执行时间（秒）
 memory_limit = 256M             # PHP 进程可用最大内存
+max_input_time = 300            # 每个脚本解析请求数据的最大时间（秒）
 
 # 表单和上传限制
-max_input_vars = 5000           # 最大输入变量数量
-post_max_size = 256M            # POST 数据最大尺寸
-upload_max_filesize = 256M      # 上传文件最大尺寸
+max_input_vars = 5000                   # 最大输入变量数量
+post_max_size = 65M                     # POST 数据最大尺寸
+upload_max_filesize = 64M               # 上传文件最大尺寸
 
 # 错误处理
 error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT   # 错误报告级别
-error_log = /var/log/php/php-error.log                # 错误日志位置
+error_log = /var/log/php/error.log                  # 错误日志位置
 
 # 区域设置
 date.timezone = Asia/Shanghai   # 时区设置

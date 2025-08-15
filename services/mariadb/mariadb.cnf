@@ -33,17 +33,17 @@ innodb_rollback_on_timeout=1
 innodb_use_native_aio=1
 
 # 错误日志配置
-log_error=/var/log/mysql/mariadb-error.log
+log_error=/var/log/mysql/error.log
 
 # 慢查询日志配置
 slow_query_log=0
 log_queries_not_using_indexes=0
 long_query_time=2
-slow_query_log_file=/var/log/mysql/mariadb-slow.log
+slow_query_log_file=/var/log/mysql/slow.log
 
-# 普通日志配置
+# 查询日志配置
 general_log=0
-general_log_file=/var/log/mysql/mariadb-general.log
+general_log_file=/var/log/mysql/general.log
 
 # 安全配置
 skip_name_resolve=1

@@ -41,7 +41,6 @@ $RECYCLE.BIN/
 # 数据目录
 /data/mariadb/*
 /data/redis/*
-/data/composer/*
 !data/*/.gitkeep
 
 # 日志目录
