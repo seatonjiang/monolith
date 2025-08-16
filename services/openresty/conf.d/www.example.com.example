@@ -44,7 +44,7 @@ server {
     ssl_certificate /etc/nginx/ssl/www.example.com.crt;
     ssl_certificate_key /etc/nginx/ssl/www.example.com.key;
 
-    access_log /var/log/nginx/www.example.com.access.log combined buffer=512k flush=1m;
+    access_log /var/log/nginx/www.example.com.access.log combined buffer=1m flush=5m;
     error_log /var/log/nginx/www.example.com.error.log warn;
 
     location / {
