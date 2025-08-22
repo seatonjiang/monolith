@@ -1,0 +1,12 @@
+/var/log/mysql/*.log {
+    daily
+    compress
+    rotate 30
+    missingok
+    notifempty
+    dateext
+    sharedscripts
+    postrotate
+        [ -f /var/run/mysqld/mysqld.pid ] && kill -USR1 "$(cat /var/run/mysqld/mysqld.pid)" || true
+    endscript
+}

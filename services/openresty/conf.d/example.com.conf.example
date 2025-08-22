@@ -1,0 +1,40 @@
+server {
+    listen 80 reuseport;
+    listen [::]:80 reuseport;
+
+    server_name example.com;
+
+    location / {
+        return 301 https://example.com$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl reuseport;
+    listen [::]:443 ssl reuseport;
+    http2 on;
+
+    server_name example.com;
+    root /var/www/example.com;
+    index index.html index.php;
+
+    ssl_certificate /etc/nginx/ssl/example.com.crt;
+    ssl_certificate_key /etc/nginx/ssl/example.com.key;
+
+    access_log /var/log/nginx/example.com.access.log combined buffer=1m flush=5m;
+    error_log /var/log/nginx/example.com.error.log warn;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ [^/]\.php(/|$) {
+        fastcgi_pass php:9000;
+        include fastcgi-php.conf;
+        include fastcgi_params;
+    }
+
+    include /etc/nginx/rewrite/general.conf;
+    include /etc/nginx/rewrite/security.conf;
+    include /etc/nginx/rewrite/wordpress.conf;
+}
