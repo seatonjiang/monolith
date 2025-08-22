@@ -10,7 +10,6 @@ RUN apk update && apk --no-cache add \
     tzdata \
     shadow \
     ghostscript \
-    imagemagick \
     logrotate \
     && rm -rf /var/cache/apk/*
 
