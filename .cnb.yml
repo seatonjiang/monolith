@@ -13,8 +13,8 @@ main:
             username: ${GITHUB_USERNAME}
             password: ${GITHUB_ACCESS_TOKEN}
   
-  # 每月构建 PHP 镜像
-  "crontab: 0 0 23 * *":
+  # 每月构建 PHP 8.1 镜像
+  "crontab: 0 10 23 * *":
     - name: 构建 PHP 8.1 AMD64
       runner:
         tags: cnb:arch:amd64
@@ -84,6 +84,8 @@ main:
               - 8.1-fpm-alpine-linux-arm64
             type: docker
 
+  # 每月构建 PHP 8.2 镜像
+  "crontab: 0 10 23 * *":
     - name: 构建 PHP 8.2 AMD64
       runner:
         tags: cnb:arch:amd64
@@ -153,6 +155,8 @@ main:
               - 8.2-fpm-alpine-linux-arm64
             type: docker
 
+  # 每月构建 PHP 8.3 镜像
+  "crontab: 0 10 23 * *":
     - name: 构建 PHP 8.3 AMD64
       runner:
         tags: cnb:arch:amd64
@@ -222,6 +226,8 @@ main:
               - 8.3-fpm-alpine-linux-arm64
             type: docker
 
+  # 每月构建 PHP 8.4 镜像
+  "crontab: 0 10 23 * *":
     - name: 构建 PHP 8.4 AMD64
       runner:
         tags: cnb:arch:amd64

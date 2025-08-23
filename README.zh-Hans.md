@@ -4,14 +4,6 @@
 
 ## 🚀 快速入门
 
-### 环境准备
-
-在开始之前，请确保服务器已安装以下软件：
-
-- Git
-- Docker
-- Docker Compose
-
 ### 第一步：克隆仓库
 
 ```bash
@@ -79,27 +71,28 @@ docker compose up -d
 
 ```bash
 monolith
-├── data                      数据持久化目录
-│   ├── mariadb               MariaDB 数据目录
-│   └── redis                 Redis 数据目录
-├── logs                      日志存储目录
-│   ├── mariadb               MariaDB 日志目录
-│   ├── openresty             OpenResty 日志目录
-│   ├── php                   PHP 日志目录
-│   └── redis                 Redis 日志目录
-├── secrets                   密钥配置目录
-│   ├── mariadb-root-pwd      MariaDB 管理员密码
-│   ├── mariadb-user-name     MariaDB 用户名称
-│   └── mariadb-user-pwd      MariaDB 用户密码
-├── services                  服务配置目录
-│   ├── mariadb               MariaDB 配置目录
-│   ├── openresty             OpenResty 配置目录
-│   ├── php                   PHP 配置目录
-│   └── redis                 Redis 配置目录
-├── wwwroot                   Web 服务根目录
-│   └── default               默认站点目录
-├── compose.yaml              Docker Compose 配置文件
-└── env.example               环境配置示例文件
+├── .cnb                            PHP 构建文件
+├── data                            数据持久化目录
+│   ├── mariadb                     MariaDB 数据目录
+│   └── redis                       Redis 数据目录
+├── logs                            日志存储目录
+│   ├── mariadb                     MariaDB 日志目录
+│   ├── openresty                   OpenResty 日志目录
+│   ├── php                         PHP 日志目录
+│   └── redis                       Redis 日志目录
+├── secrets                         密钥配置目录
+│   ├── mariadb-root-pwd            MariaDB 管理员密码
+│   ├── mariadb-user-name           MariaDB 用户名称
+│   └── mariadb-user-pwd            MariaDB 用户密码
+├── services                        服务配置目录
+│   ├── mariadb                     MariaDB 配置目录
+│   ├── openresty                   OpenResty 配置目录
+│   ├── php                         PHP 配置目录
+│   └── redis                       Redis 配置目录
+├── wwwroot                         Web 服务根目录
+│   └── default                     默认站点目录
+├── compose.yaml                    Docker Compose 配置文件
+└── env.example                     环境配置示例文件
 ```
 
 ## 💻 管理命令
@@ -110,13 +103,13 @@ monolith
 # 构建并后台运行所有容器
 docker compose up -d
 
-# 构建并后台运行指定容器
-docker compose up -d openresty php mariadb
+# 构建并后台运行指定容器（不运行 phpMyAdmin）
+docker compose up -d openresty php mariadb redis memcached
 
 # 停止所有容器并移除网络
 docker compose down
 
-# 管理指定服务（此处以 PHP 为例）
+# 管理指定服务（这里以 PHP 容器为例）
 docker compose start php            # 启动服务
 docker compose stop php             # 停止服务
 docker compose restart php          # 重启服务
