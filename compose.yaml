@@ -31,7 +31,9 @@ services:
     ports:
       - "${OPENRESTY_HTTP_PORT:-80}:80"
       - "${OPENRESTY_HTTPS_PORT:-443}:443"
+      - "${PHPMYADMIN_WEB_PORT:-28080}:8080"
     volumes:
+      - phpmyadmin_data:/var/www/html/:ro
       - ./wwwroot/:/var/www/:rw
       - ./logs/openresty/:/var/log/nginx/:rw
       - ./services/openresty/ssl/:/etc/nginx/ssl/:ro
@@ -76,11 +78,13 @@ services:
         ipv4_address: 172.16.24.12
 
   phpmyadmin:
-    image: phpmyadmin:${PHPMYADMIN_VERSION:-5.2}
+    image: phpmyadmin:${PHPMYADMIN_VERSION:-5.2-fpm-alpine}
     container_name: phpmyadmin
     restart: always
-    ports:
-      - "${PHPMYADMIN_WEB_PORT:-28080}:80"
+    volumes:
+      - phpmyadmin_data:/var/www/html/
+    # ports:
+    #   - "${PHPMYADMIN_WEB_PORT:-28080}:80"
     environment:
       - TZ=${TIME_ZONE:-Asia/Shanghai}
       - PMA_ARBITRARY=0
@@ -119,6 +123,9 @@ services:
     networks:
       monolith:
         ipv4_address: 172.16.24.15
+
+volumes:
+  phpmyadmin_data:
 
 networks:
   monolith:
