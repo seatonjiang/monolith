@@ -33,6 +33,9 @@ vi .env
 重点配置项说明：
 
 ```ini
+# PHP 版本（支持 8.1-8.4）
+PHP_VERSION=8.4-fpm-alpine
+
 # MariaDB 默认数据库名称
 MARIADB_DATABASE_NAME=monolith
 
@@ -48,11 +51,11 @@ PHPMYADMIN_WEB_PORT=28080
 - `mariadb-user-name`：MariaDB 用户名称（默认为 `user`）
 - `mariadb-user-pwd`：MariaDB 用户密码
 
-> **安全提示**：在生产环境中，请务必修改默认密码，并确保使用强密码。
+> **提示**：在生产环境中，请务必修改默认密码，并确保使用强密码，使用用户级权限进行访问。
 
 ### 第四步：构建容器
 
-构建并后台运行所有容器：
+构建并后台运行全部容器：
 
 ```bash
 docker compose up -d
@@ -63,7 +66,7 @@ docker compose up -d
 - **本地环境**：`http://localhost`
 - **线上环境**：`http://服务器 IP 地址`
 
-> **安全提示**：默认站点目录为 `wwwroot/default`，为了提高安全性，在生产环境中应取消注释 `default.conf` 中的 `return 403;` 配置（位于 `services/openresty/conf.d/default.conf` 文件中），并删除或备份默认站点目录。这样可以防止未经授权的访问和潜在的安全风险。
+> **提示**：默认站点目录为 `wwwroot/default`，为了提高安全性，在生产环境中应取消注释 `default.conf` 中的 `return 403;` 配置（`services/openresty/conf.d/default.conf`），并删除或备份默认站点目录。这样可以防止未经授权的访问和潜在的安全风险。
 
 ## 📂 目录结构
 
@@ -100,13 +103,13 @@ monolith
 ### 管理容器
 
 ```bash
-# 构建并后台运行所有容器
+# 构建并后台运行全部容器
 docker compose up -d
 
 # 构建并后台运行指定容器（不运行 phpMyAdmin）
 docker compose up -d openresty php mariadb redis memcached
 
-# 停止所有容器并移除网络
+# 停止全部容器并移除网络
 docker compose down
 
 # 管理指定服务（这里以 PHP 容器为例）
@@ -157,7 +160,6 @@ server {
 
     server_name example.com;
 
-    # HTTP 重定向到 HTTPS
     location / {
         return 301 https://example.com$request_uri;
     }
@@ -172,15 +174,12 @@ server {
     root /var/www/example.com;
     index index.html index.php;
 
-    # SSL 证书配置
     ssl_certificate /etc/nginx/ssl/example.com.crt;
     ssl_certificate_key /etc/nginx/ssl/example.com.key;
 
-    # 日志配置
-    access_log /var/log/nginx/example.com.access.log combined buffer=512k flush=1m;
+    access_log /var/log/nginx/example.com.access.log combined buffer=1m flush=5m;
     error_log /var/log/nginx/example.com.error.log warn;
 
-    # 默认路由规则
     location / {
         try_files $uri $uri/ /index.php?$query_string;
     }
@@ -191,12 +190,9 @@ server {
         include fastcgi_params;
     }
 
-    # 通用规则
     include /etc/nginx/rewrite/general.conf;
     include /etc/nginx/rewrite/security.conf;
-
-    # 如果是 WordPress 网站，取消下面的注释
-    # include /etc/nginx/rewrite/wordpress.conf;
+    include /etc/nginx/rewrite/wordpress.conf;
 }
 ```
 
@@ -235,7 +231,7 @@ install-php-extensions smbclient
 
 修改 `services/php/www.conf` 文件，找到下面两行内容并取消注释：
 
-```ini
+```conf
 slowlog = /var/log/php/slowlog.log
 request_slowlog_timeout = 3
 ```
@@ -246,7 +242,7 @@ request_slowlog_timeout = 3
 
 修改 `services/mariadb/mariadb.cnf` 文件，将下面参数设置为 1：
 
-```ini
+```conf
 slow_query_log=1
 log_queries_not_using_indexes=1
 ```
@@ -257,7 +253,7 @@ log_queries_not_using_indexes=1
 
 修改 `services/redis/redis.conf` 文件，找到 `requirepass` 参数并设置密码：
 
-```ini
+```conf
 requirepass your_strong_password
 ```
 
@@ -271,44 +267,44 @@ requirepass your_strong_password
 
 ```ini
 # 执行时间和内存限制
-max_execution_time = 180        # 脚本最大执行时间（秒）
-memory_limit = 256M             # PHP 进程可用最大内存
-max_input_time = 300            # 每个脚本解析请求数据的最大时间（秒）
+max_execution_time = 180              # 脚本最大执行时间（秒）
+memory_limit = 256M                   # PHP 进程可用最大内存
+max_input_time = 300                  # 每个脚本解析请求数据的最大时间（秒）
 
 # 表单和上传限制
-max_input_vars = 5000                   # 最大输入变量数量
-post_max_size = 65M                     # POST 数据最大尺寸
-upload_max_filesize = 64M               # 上传文件最大尺寸
-
-# 错误处理
-error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT   # 错误报告级别
-error_log = /var/log/php/error.log                  # 错误日志位置
+max_input_vars = 5000                 # 最大输入变量数量
+post_max_size = 65M                   # POST 数据最大尺寸
+upload_max_filesize = 64M             # 上传文件最大尺寸
 
 # 区域设置
-date.timezone = Asia/Shanghai   # 时区设置
+date.timezone = Asia/Shanghai         # 时区设置
+
+# 错误处理
+error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT      # 错误报告级别
+error_log = /var/log/php/error.log                       # 错误日志位置
 ```
 
 ### MariaDB 优化
 
 可以通过修改 `services/mariadb/mariadb.cnf` 文件根据实际情况优化 MariaDB 性能，以下是根据服务器资源的优化建议：
 
-```ini
+```conf
 # 小型服务器（2GB 内存）
-innodb_buffer_pool_size=256M     # InnoDB 缓冲池大小
-tmp_table_size=128M              # 内存临时表最大大小
-max_heap_table_size=128M         # 用户创建的内存表最大大小
+innodb_buffer_pool_size=256M          # InnoDB 缓冲池大小
+tmp_table_size=128M                   # 内存临时表最大大小
+max_heap_table_size=128M              # 用户创建的内存表最大大小
 
 # 中型服务器（4GB 内存）
-innodb_buffer_pool_size=512M     # InnoDB 缓冲池大小
-tmp_table_size=256M              # 内存临时表最大大小
-max_heap_table_size=256M         # 用户创建的内存表最大大小
+innodb_buffer_pool_size=512M          # InnoDB 缓冲池大小
+tmp_table_size=256M                   # 内存临时表最大大小
+max_heap_table_size=256M              # 用户创建的内存表最大大小
 
 # 大型服务器（8GB+ 内存）
-innodb_buffer_pool_size=2G       # InnoDB 缓冲池大小
-tmp_table_size=512M              # 内存临时表最大大小
-max_heap_table_size=512M         # 用户创建的内存表最大大小
+innodb_buffer_pool_size=2G            # InnoDB 缓冲池大小
+tmp_table_size=512M                   # 内存临时表最大大小
+max_heap_table_size=512M              # 用户创建的内存表最大大小
 
-# 性能监控（低配生产环境在需要的时候开启）
+# 性能监控（如果是低配生产环境，在需要的时候开启）
 performance_schema=ON
 performance_schema_max_table_instances=400
 ```
@@ -318,24 +314,18 @@ performance_schema_max_table_instances=400
 可以通过修改 `services/redis/redis.conf` 文件根据实际情况优化 Redis 性能，下面是已经优化的内容：
 
 ```ini
-# 网络配置：允许从任何 IP 地址访问 Redis 服务
-bind 0.0.0.0
+# 网络配置
+bind 0.0.0.0                  # 允许从任何 IP 地址访问 Redis 服务，Redis 服务只在内部使用，可以使用 0.0.0.0
 
-# 持久化策略：根据写入量自动触发 RDB 快照
-# 900 秒内至少有 1 个键被修改
-save 900 1
-# 300 秒内至少有 10 个键被修改
-save 300 10
-# 60 秒内至少有 10000 个键被修改
-save 60 10000
+# 持久化策略
+save 900 1                    # 900 秒内至少有 1 个键被修改
+save 300 10                   # 300 秒内至少有 10 个键被修改
+save 60 10000                 # 60 秒内至少有 10000 个键被修改
 
-# 安全配置：禁用危险命令
-# 禁用清空所有数据库的命令
-rename-command FLUSHALL ""
-# 禁用执行Lua脚本的命令
-rename-command EVAL     ""
-# 禁用清空当前数据库的命令
-rename-command FLUSHDB  ""
+# 安全配置
+rename-command FLUSHALL ""    # 禁用清空所有数据库的命令
+rename-command EVAL     ""    # 禁用执行Lua脚本的命令
+rename-command FLUSHDB  ""    # 禁用清空当前数据库的命令
 ```
 
 ## 🤝 参与共建
