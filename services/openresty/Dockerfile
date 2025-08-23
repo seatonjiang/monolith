@@ -11,10 +11,6 @@ RUN apk update && apk --no-cache add \
     logrotate \
     && rm -rf /var/cache/apk/*
 
-# 安装 brotli 模块
-COPY /modules/ngx_http_brotli_filter_module.so /usr/local/openresty/nginx/modules/ngx_http_brotli_filter_module.so
-COPY /modules/ngx_http_brotli_static_module.so /usr/local/openresty/nginx/modules/ngx_http_brotli_static_module.so
-
 # 设置日志轮转定时任务
 RUN echo "0 0 * * * logrotate -f /etc/logrotate.d/openresty" >> /etc/crontabs/root
 
