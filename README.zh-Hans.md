@@ -231,7 +231,7 @@ install-php-extensions smbclient
 
 修改 `services/php/www.conf` 文件，找到下面两行内容并取消注释：
 
-```conf
+```ini
 slowlog = /var/log/php/slowlog.log
 request_slowlog_timeout = 3
 ```
@@ -242,7 +242,7 @@ request_slowlog_timeout = 3
 
 修改 `services/mariadb/mariadb.cnf` 文件，将下面参数设置为 1：
 
-```conf
+```ini
 slow_query_log=1
 log_queries_not_using_indexes=1
 ```
@@ -253,7 +253,7 @@ log_queries_not_using_indexes=1
 
 修改 `services/redis/redis.conf` 文件，找到 `requirepass` 参数并设置密码：
 
-```conf
+```ini
 requirepass your_strong_password
 ```
 
@@ -288,7 +288,7 @@ error_log = /var/log/php/error.log                       # 错误日志位置
 
 可以通过修改 `services/mariadb/mariadb.cnf` 文件根据实际情况优化 MariaDB 性能，以下是根据服务器资源的优化建议：
 
-```conf
+```ini
 # 小型服务器（2GB 内存）
 innodb_buffer_pool_size=256M          # InnoDB 缓冲池大小
 tmp_table_size=128M                   # 内存临时表最大大小
