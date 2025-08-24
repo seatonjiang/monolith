@@ -39,9 +39,10 @@ services:
       - ./services/openresty/ssl/:/etc/nginx/ssl/:ro
       - ./services/openresty/conf.d/:/etc/nginx/conf.d/:ro
       - ./services/openresty/rewrite/:/etc/nginx/rewrite/:ro
-      - ./services/openresty/openresty.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
-      - ./services/openresty/fastcgi-php.conf:/usr/local/openresty/nginx/conf/fastcgi-php.conf:ro
-      - ./services/openresty/fastcgi_params:/usr/local/openresty/nginx/conf/fastcgi_params:ro
+      - ./services/openresty/conf/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
+      - ./services/openresty/conf/fastcgi.conf:/usr/local/openresty/nginx/conf/fastcgi.conf:ro
+      - ./services/openresty/conf/fastcgi-php.conf:/usr/local/openresty/nginx/conf/fastcgi-php.conf:ro
+      - ./services/openresty/conf/mime.types:/usr/local/openresty/nginx/conf/mime.types:ro
       - ./services/openresty/logrotate/openresty:/etc/logrotate.d/openresty:ro
     environment:
       - TZ=${TIME_ZONE:-Asia/Shanghai}
@@ -83,8 +84,6 @@ services:
     restart: always
     volumes:
       - phpmyadmin_data:/var/www/html/
-    # ports:
-    #   - "${PHPMYADMIN_WEB_PORT:-28080}:80"
     environment:
       - TZ=${TIME_ZONE:-Asia/Shanghai}
       - PMA_ARBITRARY=0

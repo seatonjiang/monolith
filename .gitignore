@@ -50,6 +50,10 @@ $RECYCLE.BIN/
 /logs/redis/*
 !logs/*/.gitkeep
 
+# 网站目录
+/wwwroot/*
+!wwwroot/default/phpinfo.php
+
 # 环境文件
 .env
 
