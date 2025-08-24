@@ -143,9 +143,80 @@ docker exec -it memcached /bin/sh
 docker exec -it phpmyadmin /bin/bash
 ```
 
+## 🔧 性能优化
+
+### PHP 优化
+
+可以通过修改 `services/php/php.ini` 文件根据实际情况优化 PHP 性能，下面是已经优化的内容：
+
+```ini
+# 执行时间和内存限制
+max_execution_time = 180              # 脚本最大执行时间（秒）
+memory_limit = 256M                   # PHP 进程可用最大内存
+max_input_time = 300                  # 每个脚本解析请求数据的最大时间（秒）
+
+# 表单和上传限制
+max_input_vars = 5000                 # 最大输入变量数量
+post_max_size = 65M                   # POST 数据最大尺寸
+upload_max_filesize = 64M             # 上传文件最大尺寸
+
+# 区域设置
+date.timezone = Asia/Shanghai         # 时区设置
+
+# 错误处理
+error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT      # 错误报告级别
+error_log = /var/log/php/error.log                       # 错误日志位置
+```
+
+### MariaDB 优化
+
+可以通过修改 `services/mariadb/mariadb.cnf` 文件根据实际情况优化 MariaDB 性能，以下是根据服务器资源的优化建议：
+
+```ini
+# 小型服务器（2GB 内存）
+innodb_buffer_pool_size=256M          # InnoDB 缓冲池大小
+tmp_table_size=128M                   # 内存临时表最大大小
+max_heap_table_size=128M              # 用户创建的内存表最大大小
+
+# 中型服务器（4GB 内存）
+innodb_buffer_pool_size=512M          # InnoDB 缓冲池大小
+tmp_table_size=256M                   # 内存临时表最大大小
+max_heap_table_size=256M              # 用户创建的内存表最大大小
+
+# 大型服务器（8GB+ 内存）
+innodb_buffer_pool_size=2G            # InnoDB 缓冲池大小
+tmp_table_size=512M                   # 内存临时表最大大小
+max_heap_table_size=512M              # 用户创建的内存表最大大小
+
+# 性能监控（如果是低配生产环境，在需要的时候开启）
+performance_schema=ON
+performance_schema_max_table_instances=400
+```
+
+### Redis 优化
+
+可以通过修改 `services/redis/redis.conf` 文件根据实际情况优化 Redis 性能，下面是已经优化的内容：
+
+```ini
+# 网络配置
+bind 0.0.0.0                  # 允许从任何 IP 地址访问 Redis 服务，Redis 服务只在内部使用，可以使用 0.0.0.0
+
+# 持久化策略
+save 900 1                    # 900 秒内至少有 1 个键被修改
+save 300 10                   # 300 秒内至少有 10 个键被修改
+save 60 10000                 # 60 秒内至少有 10000 个键被修改
+
+# 安全配置
+rename-command FLUSHALL ""    # 禁用清空所有数据库的命令
+rename-command EVAL     ""    # 禁用执行Lua脚本的命令
+rename-command FLUSHDB  ""    # 禁用清空当前数据库的命令
+```
+
 ## 📚 常见问题
 
-### OpenResty 新增网站
+<details>
+
+<summary><strong>OpenResty 新增网站</strong></summary>
 
 要在 OpenResty 中添加新网站，请按照以下步骤操作：
 
@@ -216,7 +287,10 @@ docker exec -it openresty nginx -s reload
 
 在浏览器中输入 `https://example.com` 测试网站是否正常访问。
 
-### PHP 安装扩展
+</details>
+
+<details>
+<summary><strong>PHP 安装扩展</strong></summary>
 
 进入 PHP 容器，使用 `install-php-extensions` 命令快速安装扩展：
 
@@ -227,7 +301,10 @@ install-php-extensions smbclient
 
 > **提示**：支持的扩展列表请参考：[docker-php-extension-installer](https://github.com/mlocati/docker-php-extension-installer#supported-php-extensions)
 
-### PHP 开启慢脚本日志
+</details>
+
+<details>
+<summary><strong>PHP 开启慢脚本日志</strong></summary>
 
 修改 `services/php/www.conf` 文件，找到下面两行内容并取消注释：
 
@@ -238,7 +315,10 @@ request_slowlog_timeout = 3
 
 > **注意**：生产环境中建议关闭慢脚本日志，以提高性能。
 
-### MariaDB 开启慢查询日志
+</details>
+
+<details>
+<summary><strong>MariaDB 开启慢查询日志</strong></summary>
 
 修改 `services/mariadb/mariadb.cnf` 文件，将下面参数设置为 1：
 
@@ -249,7 +329,10 @@ log_queries_not_using_indexes=1
 
 > **注意**：生产环境建议将这些参数设置为 0，以提高性能。
 
-### Redis 设置密码
+</details>
+
+<details>
+<summary><strong>Redis 设置密码</strong></summary>
 
 修改 `services/redis/redis.conf` 文件，找到 `requirepass` 参数并设置密码：
 
@@ -259,74 +342,7 @@ requirepass your_strong_password
 
 > **安全提示**：请使用强密码，避免使用默认密码 `foobared`。
 
-## 🔧 性能优化
-
-### PHP 优化
-
-可以通过修改 `services/php/php.ini` 文件根据实际情况优化 PHP 性能，下面是已经优化的内容：
-
-```ini
-# 执行时间和内存限制
-max_execution_time = 180              # 脚本最大执行时间（秒）
-memory_limit = 256M                   # PHP 进程可用最大内存
-max_input_time = 300                  # 每个脚本解析请求数据的最大时间（秒）
-
-# 表单和上传限制
-max_input_vars = 5000                 # 最大输入变量数量
-post_max_size = 65M                   # POST 数据最大尺寸
-upload_max_filesize = 64M             # 上传文件最大尺寸
-
-# 区域设置
-date.timezone = Asia/Shanghai         # 时区设置
-
-# 错误处理
-error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT      # 错误报告级别
-error_log = /var/log/php/error.log                       # 错误日志位置
-```
-
-### MariaDB 优化
-
-可以通过修改 `services/mariadb/mariadb.cnf` 文件根据实际情况优化 MariaDB 性能，以下是根据服务器资源的优化建议：
-
-```ini
-# 小型服务器（2GB 内存）
-innodb_buffer_pool_size=256M          # InnoDB 缓冲池大小
-tmp_table_size=128M                   # 内存临时表最大大小
-max_heap_table_size=128M              # 用户创建的内存表最大大小
-
-# 中型服务器（4GB 内存）
-innodb_buffer_pool_size=512M          # InnoDB 缓冲池大小
-tmp_table_size=256M                   # 内存临时表最大大小
-max_heap_table_size=256M              # 用户创建的内存表最大大小
-
-# 大型服务器（8GB+ 内存）
-innodb_buffer_pool_size=2G            # InnoDB 缓冲池大小
-tmp_table_size=512M                   # 内存临时表最大大小
-max_heap_table_size=512M              # 用户创建的内存表最大大小
-
-# 性能监控（如果是低配生产环境，在需要的时候开启）
-performance_schema=ON
-performance_schema_max_table_instances=400
-```
-
-### Redis 优化
-
-可以通过修改 `services/redis/redis.conf` 文件根据实际情况优化 Redis 性能，下面是已经优化的内容：
-
-```ini
-# 网络配置
-bind 0.0.0.0                  # 允许从任何 IP 地址访问 Redis 服务，Redis 服务只在内部使用，可以使用 0.0.0.0
-
-# 持久化策略
-save 900 1                    # 900 秒内至少有 1 个键被修改
-save 300 10                   # 300 秒内至少有 10 个键被修改
-save 60 10000                 # 60 秒内至少有 10000 个键被修改
-
-# 安全配置
-rename-command FLUSHALL ""    # 禁用清空所有数据库的命令
-rename-command EVAL     ""    # 禁用执行Lua脚本的命令
-rename-command FLUSHDB  ""    # 禁用清空当前数据库的命令
-```
+</details>
 
 ## 🤝 参与共建
 
