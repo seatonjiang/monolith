@@ -53,8 +53,8 @@ server {
 
     location ~ [^/]\.php(/|$) {
         fastcgi_pass php:9000;
+        include fastcgi.conf;
         include fastcgi-php.conf;
-        include fastcgi_params;
     }
 
     include /etc/nginx/rewrite/general.conf;
