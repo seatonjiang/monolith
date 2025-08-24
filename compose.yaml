@@ -24,7 +24,7 @@ services:
     build:
       context: ./services/openresty
       args:
-        - OPENRESTY_VERSION=${OPENRESTY_VERSION:-1.27.1.2-3-alpine}
+        - OPENRESTY_VERSION=${OPENRESTY_VERSION:-alpine}
         - ALPINE_MIRROR=${ALPINE_MIRROR:-mirrors.cloud.tencent.com}
     container_name: openresty
     restart: always

@@ -1,5 +1,5 @@
 ARG OPENRESTY_VERSION
-FROM openresty/openresty:${OPENRESTY_VERSION:-1.27.1.2-3-alpine}
+FROM docker.cnb.cool/seatonjiang/monolith/openresty:${OPENRESTY_VERSION:-alpine}
 
 # 替换 Alpine 镜像源
 ARG ALPINE_MIRROR
