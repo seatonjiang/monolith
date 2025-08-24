@@ -362,7 +362,7 @@ main:
         - name: 删除临时镜像
           type: artifact:remove-tag
           options:
-            name: ${REPO_NAME}/php
+            name: ${REPO_NAME}/openresty
             tags:
               - alpine-linux-amd64
               - alpine-linux-arm64
