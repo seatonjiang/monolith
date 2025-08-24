@@ -298,7 +298,7 @@ main:
             type: docker
 
   # 每月构建 OpenResty 镜像
-  "crontab: 51 14 24 * *":
+  "crontab: 54 16 24 * *":
     - name: 构建 OpenResty AMD64
       runner:
         tags: cnb:arch:amd64
