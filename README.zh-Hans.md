@@ -74,7 +74,6 @@ docker compose up -d
 
 ```bash
 monolith
-├── .cnb                            PHP 构建文件
 ├── data                            数据持久化目录
 │   ├── mariadb                     MariaDB 数据目录
 │   └── redis                       Redis 数据目录
@@ -257,8 +256,8 @@ server {
 
     location ~ [^/]\.php(/|$) {
         fastcgi_pass php:9000;
+        include fastcgi.conf;
         include fastcgi-php.conf;
-        include fastcgi_params;
     }
 
     include /etc/nginx/rewrite/general.conf;
@@ -325,6 +324,19 @@ request_slowlog_timeout = 3
 ```ini
 slow_query_log=1
 log_queries_not_using_indexes=1
+```
+
+> **注意**：生产环境建议将这些参数设置为 0，以提高性能。
+
+</details>
+
+<details>
+<summary><strong>MariaDB 通用查询日志配置</strong></summary>
+
+修改 `services/mariadb/mariadb.cnf` 文件，将下面参数设置为 1：
+
+```ini
+general_log=1
 ```
 
 > **注意**：生产环境建议将这些参数设置为 0，以提高性能。
