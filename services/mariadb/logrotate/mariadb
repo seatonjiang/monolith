@@ -7,6 +7,6 @@
     dateext
     sharedscripts
     postrotate
-        [ -f /var/run/mysqld/mysqld.pid ] && kill -USR1 "$(cat /var/run/mysqld/mysqld.pid)" || true
+        mariadb-admin --local flush-error-log flush-engine-log flush-general-log flush-slow-log
     endscript
 }
