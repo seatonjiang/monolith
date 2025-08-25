@@ -1,16 +1,8 @@
 # Monolith
 
-> Easily build PHP production environment based on Docker, integrating common services such as OpenResty, PHP, MariaDB, Redis, Memcached, etc.
+> Easily build PHP production environment based on Docker, integrating commonly used services such as OpenResty, PHP, MariaDB, Redis, Memcached.
 
 ## 🚀 Quick Start
-
-### Environment Preparation
-
-Before starting, please ensure the following software is installed on your server:
-
-- Git
-- Docker
-- Docker Compose
 
 ### Step 1: Clone Repository
 
@@ -38,11 +30,11 @@ Edit the `.env` file and modify the configuration as needed:
 vi .env
 ```
 
-Key configuration items explanation:
+Configuration items:
 
 ```ini
-# PHP pre-installed extensions
-PHP_EXTENSIONS=redis,memcached,opcache,pdo_mysql,mysqli,zip,gd,imagick,igbinary,bz2,exif,bcmath,intl
+# PHP version (supports 8.1-8.4)
+PHP_VERSION=8.4-fpm-alpine
 
 # MariaDB default database name
 MARIADB_DATABASE_NAME=monolith
@@ -55,11 +47,11 @@ PHPMYADMIN_WEB_PORT=28080
 
 Modify the configuration files in the `secrets` directory:
 
-- `mariadb-root-pwd`: MariaDB administrator password (account is `root`)
+- `mariadb-root-pwd`: MariaDB administrator password (username is `root`)
 - `mariadb-user-name`: MariaDB username (default is `user`)
 - `mariadb-user-pwd`: MariaDB user password
 
-> **Security Tip**: In production environments, be sure to change the default passwords and ensure strong passwords are used.
+> **Tip**: In production environments, be sure to change the default passwords, ensure strong passwords are used, and access with user-level permissions.
 
 ### Step 4: Build Containers
 
@@ -71,39 +63,38 @@ docker compose up -d
 
 ### Step 5: Website Browsing
 
-- **Local Environment**: `http://localhost`
-- **Online Environment**: `http://Server IP Address`
+- **Local environment**: `http://localhost`
+- **Online environment**: `http://server IP address`
 
-> **Security Tip**: The default site directory is `wwwroot/default`. For enhanced security in production environments, uncomment the `return 403;` configuration in `default.conf` (located in the `services/openresty/conf.d/default.conf` file), and delete or backup the default site directory. This prevents unauthorized access and potential security risks.
+> **Tip**: The default site directory is `wwwroot/default`. For improved security in production environments, uncomment the `return 403;` configuration in `default.conf` (`services/openresty/conf.d/default.conf`), and delete or backup the default site directory. This prevents unauthorized access and potential security risks.
 
 ## 📂 Directory Structure
 
-Project directory structure explanation:
+Project directory structure:
 
 ```bash
 monolith
-├── data                      Data persistence directory
-│   ├── composer              Composer data directory
-│   ├── mariadb               MariaDB data directory
-│   └── redis                 Redis data directory
-├── logs                      Log storage directory
-│   ├── mariadb               MariaDB log directory
-│   ├── openresty             OpenResty log directory
-│   ├── php                   PHP log directory
-│   └── redis                 Redis log directory
-├── secrets                   Secret configuration directory
-│   ├── mariadb-root-pwd      MariaDB administrator password
-│   ├── mariadb-user-name     MariaDB username
-│   └── mariadb-user-pwd      MariaDB user password
-├── services                  Service configuration directory
-│   ├── mariadb               MariaDB configuration directory
-│   ├── openresty             OpenResty configuration directory
-│   ├── php                   PHP configuration directory
-│   └── redis                 Redis configuration directory
-├── wwwroot                   Web service root directory
-│   └── default               Default site directory
-├── compose.yaml              Docker Compose configuration file
-└── env.example               Environment configuration example file
+├── data                            Data persistence directory
+│   ├── mariadb                     MariaDB data directory
+│   └── redis                       Redis data directory
+├── logs                            Log storage directory
+│   ├── mariadb                     MariaDB log directory
+│   ├── openresty                   OpenResty log directory
+│   ├── php                         PHP log directory
+│   └── redis                       Redis log directory
+├── secrets                         Secret configuration directory
+│   ├── mariadb-root-pwd            MariaDB administrator password
+│   ├── mariadb-user-name           MariaDB username
+│   └── mariadb-user-pwd            MariaDB user password
+├── services                        Service configuration directory
+│   ├── mariadb                     MariaDB configuration directory
+│   ├── openresty                   OpenResty configuration directory
+│   ├── php                         PHP configuration directory
+│   └── redis                       Redis configuration directory
+├── wwwroot                         Web service root directory
+│   └── default                     Default site directory
+├── compose.yaml                    Docker Compose configuration file
+└── env.example                     Environment configuration example file
 ```
 
 ## 💻 Management Commands
@@ -114,46 +105,117 @@ monolith
 # Build and run all containers in the background
 docker compose up -d
 
-# Build and run specific containers in the background
-docker compose up -d openresty php mariadb
+# Build and run specific containers (without running phpMyAdmin)
+docker compose up -d openresty php mariadb redis memcached
 
-# Stop all containers and remove networks
+# Stop all containers and remove network
 docker compose down
 
-# Manage specific services (using PHP as an example)
+# Manage specific services (using PHP container as an example)
 docker compose start php            # Start service
 docker compose stop php             # Stop service
 docker compose restart php          # Restart service
 docker compose build php            # Rebuild service
 ```
 
-### Entering Containers
+### Enter Containers
 
-During operations, `docker exec -it` is frequently used to enter containers. Here are common commands:
+During operations, `docker exec -it` is often used to enter containers. Here are common commands:
 
 ```bash
-# Enter the running PHP container
+# Enter running PHP container
 docker exec -it php /bin/sh
 
-# Enter the running OpenResty container
+# Enter running OpenResty container
 docker exec -it openresty /bin/sh
 
-# Enter the running MariaDB container
+# Enter running MariaDB container
 docker exec -it mariadb /bin/bash
 
-# Enter the running Redis container
+# Enter running Redis container
 docker exec -it redis /bin/sh
 
-# Enter the running Memcached container
+# Enter running Memcached container
 docker exec -it memcached /bin/sh
 
-# Enter the running phpMyAdmin container
+# Enter running phpMyAdmin container
 docker exec -it phpmyadmin /bin/bash
 ```
 
-## 📚 Common Issues
+## 🔧 Performance Optimization
 
-### Adding New Website to OpenResty
+### PHP Optimization
+
+You can optimize PHP performance by modifying the `services/php/php.ini` file according to your actual situation. Below are the optimized contents:
+
+```ini
+# Execution time and memory limits
+max_execution_time = 180              # Maximum script execution time (seconds)
+memory_limit = 256M                   # Maximum memory available for PHP processes
+max_input_time = 300                  # Maximum time for each script to parse request data (seconds)
+
+# Form and upload limits
+max_input_vars = 5000                 # Maximum number of input variables
+post_max_size = 65M                   # Maximum POST data size
+upload_max_filesize = 64M             # Maximum upload file size
+
+# Regional settings
+date.timezone = Asia/Shanghai         # Timezone setting
+
+# Error handling
+error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT      # Error reporting level
+error_log = /var/log/php/error.log                       # Error log location
+```
+
+### MariaDB Optimization
+
+You can optimize MariaDB performance by modifying the `services/mariadb/mariadb.cnf` file according to your actual situation. Below are optimization suggestions based on server resources:
+
+```ini
+# Small server (2GB memory)
+innodb_buffer_pool_size=256M          # InnoDB buffer pool size
+tmp_table_size=128M                   # Maximum size for in-memory temporary tables
+max_heap_table_size=128M              # Maximum size for user-created memory tables
+
+# Medium server (4GB memory)
+innodb_buffer_pool_size=512M          # InnoDB buffer pool size
+tmp_table_size=256M                   # Maximum size for in-memory temporary tables
+max_heap_table_size=256M              # Maximum size for user-created memory tables
+
+# Large server (8GB+ memory)
+innodb_buffer_pool_size=2G            # InnoDB buffer pool size
+tmp_table_size=512M                   # Maximum size for in-memory temporary tables
+max_heap_table_size=512M              # Maximum size for user-created memory tables
+
+# Performance monitoring (enable when needed in low-spec production environments)
+performance_schema=ON
+performance_schema_max_table_instances=400
+```
+
+### Redis Optimization
+
+You can optimize Redis performance by modifying the `services/redis/redis.conf` file according to your actual situation. Below are the optimized contents:
+
+```ini
+# Network configuration
+bind 0.0.0.0                  # Allow Redis service access from any IP address, Redis service is only used internally, can use 0.0.0.0
+
+# Persistence strategy
+save 900 1                    # At least 1 key modified within 900 seconds
+save 300 10                   # At least 10 keys modified within 300 seconds
+save 60 10000                 # At least 10000 keys modified within 60 seconds
+
+# Security configuration
+rename-command FLUSHALL ""    # Disable command to clear all databases
+rename-command EVAL     ""    # Disable command to execute Lua scripts
+rename-command FLUSHDB  ""    # Disable command to clear current database
+```
+
+## 📚 Common Questions
+
+<details>
+
+<summary><strong>Adding New Website to OpenResty</strong></summary>
 
 To add a new website in OpenResty, follow these steps:
 
@@ -163,51 +225,44 @@ Create a new configuration file in the `services/openresty/conf.d/` directory, f
 
 ```nginx
 server {
-    listen 80;
-    listen [::]:80;
+    listen 80 reuseport;
+    listen [::]:80 reuseport;
 
     server_name example.com;
 
-    # HTTP redirect to HTTPS
     location / {
         return 301 https://example.com$request_uri;
     }
 }
 
 server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
+    listen 443 ssl reuseport;
+    listen [::]:443 ssl reuseport;
     http2 on;
 
     server_name example.com;
     root /var/www/example.com;
     index index.html index.php;
 
-    # SSL certificate configuration
     ssl_certificate /etc/nginx/ssl/example.com.crt;
     ssl_certificate_key /etc/nginx/ssl/example.com.key;
 
-    # Log configuration
-    access_log /var/log/nginx/example.com.access.log combined buffer=512k flush=1m;
+    access_log /var/log/nginx/example.com.access.log combined buffer=1m flush=5m;
     error_log /var/log/nginx/example.com.error.log warn;
 
-    # Default routing rules
     location / {
         try_files $uri $uri/ /index.php?$query_string;
     }
 
     location ~ [^/]\.php(/|$) {
         fastcgi_pass php:9000;
+        include fastcgi.conf;
         include fastcgi-php.conf;
-        include fastcgi_params;
     }
 
-    # General rules
     include /etc/nginx/rewrite/general.conf;
     include /etc/nginx/rewrite/security.conf;
-
-    # If it's a WordPress website, uncomment the line below
-    # include /etc/nginx/rewrite/wordpress.conf;
+    include /etc/nginx/rewrite/wordpress.conf;
 }
 ```
 
@@ -229,58 +284,26 @@ docker exec -it openresty nginx -s reload
 
 #### Step 5: Test Access
 
-Enter `https://example.com` in your browser to test if the website is accessible normally.
+Enter `https://example.com` in your browser to test if the website is accessible.
 
-### Installing PHP Extensions
+</details>
 
-There are two ways to install PHP extensions:
+<details>
+<summary><strong>Installing PHP Extensions</strong></summary>
 
-#### Method 1: Install via Environment Variables (Recommended)
-
-Use `install-php-extensions` to install PHP extensions by modifying the `PHP_EXTENSIONS` variable in the `.env` configuration file, then rebuild the PHP container:
-
-```bash
-# Stop and remove the existing PHP container
-docker compose stop php
-docker compose rm -f php
-
-# Rebuild the PHP container
-docker compose build --no-cache php
-
-# Start the newly built PHP container
-docker compose up -d php
-```
-
-#### Method 2: Quick Installation by Entering the Container
-
-You can also directly enter the PHP container and use the `install-php-extensions` command to quickly install extensions:
+Enter the PHP container and use the `install-php-extensions` command to quickly install extensions:
 
 ```bash
 docker exec -it php /bin/sh
-install-php-extensions apcu
+install-php-extensions smbclient
 ```
 
 > **Tip**: For a list of supported extensions, please refer to: [docker-php-extension-installer](https://github.com/mlocati/docker-php-extension-installer#supported-php-extensions)
 
-### Composer Mirror Repository
+</details>
 
-#### Default Mirror
-
-By default, the Tencent Cloud mirror (mirrors.cloud.tencent.com) is used, which is a unified domain for both public and internal networks, solving access issues in different network environments:
-
-- If in a public network environment, it will automatically access through the public network.
-- If in a Tencent Cloud VPC internal environment with default cloud DNS configuration, it will prioritize resolving to the internal network link, providing more stable and faster service.
-
-#### Changing Mirror
-
-To change the mirror, for example to the Shanghai Jiao Tong University mirror, execute the following commands:
-
-```bash
-docker exec -it php /bin/sh
-composer config -g repos.packagist composer https://packagist.mirrors.sjtug.sjtu.edu.cn
-```
-
-### Enabling PHP Slow Script Logging
+<details>
+<summary><strong>Enabling PHP Slow Script Logging</strong></summary>
 
 Modify the `services/php/www.conf` file, find the following two lines and uncomment them:
 
@@ -291,7 +314,10 @@ request_slowlog_timeout = 3
 
 > **Note**: In production environments, it is recommended to disable slow script logging to improve performance.
 
-### Enabling MariaDB Slow Query Logging
+</details>
+
+<details>
+<summary><strong>Enabling MariaDB Slow Query Logging</strong></summary>
 
 Modify the `services/mariadb/mariadb.cnf` file, set the following parameters to 1:
 
@@ -302,7 +328,23 @@ log_queries_not_using_indexes=1
 
 > **Note**: In production environments, it is recommended to set these parameters to 0 to improve performance.
 
-### Setting Redis Password
+</details>
+
+<details>
+<summary><strong>MariaDB General Query Log Configuration</strong></summary>
+
+Modify the `services/mariadb/mariadb.cnf` file, set the following parameter to 1:
+
+```ini
+general_log=1
+```
+
+> **Note**: In production environments, it is recommended to set these parameters to 0 to improve performance.
+
+</details>
+
+<details>
+<summary><strong>Setting Redis Password</strong></summary>
 
 Modify the `services/redis/redis.conf` file, find the `requirepass` parameter and set the password:
 
@@ -310,77 +352,9 @@ Modify the `services/redis/redis.conf` file, find the `requirepass` parameter an
 requirepass your_strong_password
 ```
 
-> **Security Tip**: Please use a strong password and avoid using the default password `foobared`.
+> **Security tip**: Please use a strong password and avoid using the default password `foobared`.
 
-## 🔧 Performance Optimization
-
-### PHP Optimization
-
-You can optimize PHP performance by modifying the `services/php/php.ini` file according to your actual situation. Here are the already optimized contents:
-
-```ini
-# Execution time and memory limits
-max_execution_time = 300        # Maximum script execution time (seconds)
-memory_limit = 256M             # Maximum memory available for PHP processes
-
-# Form and upload limits
-max_input_vars = 5000           # Maximum number of input variables
-post_max_size = 256M            # Maximum POST data size
-upload_max_filesize = 256M      # Maximum upload file size
-
-# Error handling
-error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT   # Error reporting level
-error_log = /var/log/php/error.log                    # Error log location
-
-# Region settings
-date.timezone = Asia/Shanghai   # Timezone setting
-```
-
-### MariaDB Optimization
-
-You can optimize MariaDB performance by modifying the `services/mariadb/mariadb.cnf` file according to your actual situation. Here are optimization suggestions based on server resources:
-
-```ini
-# Small server (2GB memory)
-innodb_buffer_pool_size=256M     # InnoDB buffer pool size
-tmp_table_size=128M              # Maximum size of in-memory temporary tables
-max_heap_table_size=128M         # Maximum size of user-created memory tables
-
-# Medium server (4GB memory)
-innodb_buffer_pool_size=512M     # InnoDB buffer pool size
-tmp_table_size=256M              # Maximum size of in-memory temporary tables
-max_heap_table_size=256M         # Maximum size of user-created memory tables
-
-# Large server (8GB+ memory)
-innodb_buffer_pool_size=2G       # InnoDB buffer pool size
-tmp_table_size=512M              # Maximum size of in-memory temporary tables
-max_heap_table_size=512M         # Maximum size of user-created memory tables
-```
-
-### Redis Optimization
-
-You can optimize Redis performance by modifying the `services/redis/redis.conf` file according to your actual situation. Here are the already optimized contents:
-
-```ini
-# Network configuration: Allow Redis service access from any IP address
-bind 0.0.0.0
-
-# Persistence strategy: Automatically trigger RDB snapshots based on write volume
-# At least 1 key modified within 900 seconds
-save 900 1
-# At least 10 keys modified within 300 seconds
-save 300 10
-# At least 10000 keys modified within 60 seconds
-save 60 10000
-
-# Security configuration: Disable dangerous commands
-# Disable command to clear all databases
-rename-command FLUSHALL ""
-# Disable command to execute Lua scripts
-rename-command EVAL     ""
-# Disable command to clear current database
-rename-command FLUSHDB  ""
-```
+</details>
 
 ## 🤝 Contributing
 
