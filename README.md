@@ -352,7 +352,7 @@ Modify the `services/redis/redis.conf` file, find the `requirepass` parameter an
 requirepass your_strong_password
 ```
 
-> **Security tip**: Please use a strong password and avoid using the default password `foobared`.
+> **Note**: Please use a strong password and avoid using the default password `foobared`.
 
 </details>
 

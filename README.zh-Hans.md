@@ -352,7 +352,7 @@ general_log=1
 requirepass your_strong_password
 ```
 
-> **安全提示**：请使用强密码，避免使用默认密码 `foobared`。
+> **注意**：请使用强密码，避免使用默认密码 `foobared`。
 
 </details>
 
