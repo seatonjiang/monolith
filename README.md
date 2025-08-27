@@ -1,6 +1,6 @@
 # Monolith
 
-> Easily build PHP production environment based on Docker, integrating commonly used services such as OpenResty, PHP, MariaDB, Redis, Memcached.
+Easily build PHP production environment based on Docker, integrating commonly used services such as OpenResty, PHP, MariaDB, Redis, Memcached.
 
 ## 🚀 Quick Start
 
@@ -358,8 +358,8 @@ requirepass your_strong_password
 
 ## 🤝 Contributing
 
-We welcome all contributions. You can submit any ideas as Pull Requests or Issues.
+We welcome all contributions. You can submit any ideas as Pull requests or as Issues, have a good time!
 
 ## 📃 License
 
-The project is released under the MIT License. For detailed information, please refer to the [LICENSE](https://github.com/seatonjiang/monolith/blob/main/LICENSE) file.
+The project is released under the MIT License, see the [LICENSE](https://github.com/seatonjiang/monolith/blob/main/LICENSE) file for details.

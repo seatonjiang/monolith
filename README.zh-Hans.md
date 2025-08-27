@@ -1,6 +1,6 @@
 # Monolith
 
-> 基于 Docker 轻松构建 PHP 生产环境，集成了 OpenResty、PHP、MariaDB、Redis、Memcached 等常用服务。
+基于 Docker 轻松构建 PHP 生产环境，集成了 OpenResty、PHP、MariaDB、Redis、Memcached 等常用服务。
 
 ## 🚀 快速入门
 
