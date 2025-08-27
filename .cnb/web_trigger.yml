@@ -3,11 +3,15 @@ branch:
     buttons:
       - name: 构建 OpenResty 镜像
         event: web_trigger_build_openresty
+
       - name: 构建 PHP 8.1 镜像
         event: web_trigger_build_php81
+
       - name: 构建 PHP 8.2 镜像
         event: web_trigger_build_php82
+
       - name: 构建 PHP 8.3 镜像
         event: web_trigger_build_php83
+
       - name: 构建 PHP 8.4 镜像
         event: web_trigger_build_php84
