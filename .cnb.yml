@@ -13,8 +13,8 @@ main:
             username: ${GITHUB_USERNAME}
             password: ${GITHUB_ACCESS_TOKEN}
 
-  # 每月构建 PHP 8.1 镜像
-  "crontab: 26 16 26 * *":
+  # 手动构建 PHP 8.1 镜像
+  build_php81:
     - name: 构建 PHP 8.1 AMD64
       runner:
         tags: cnb:arch:amd64
@@ -84,8 +84,8 @@ main:
               - 8.1-fpm-alpine-linux-arm64
             type: docker
 
-  # 每月构建 PHP 8.2 镜像
-  "crontab: 27 16 26 * *":
+  # 手动构建 PHP 8.2 镜像
+  build_php82:
     - name: 构建 PHP 8.2 AMD64
       runner:
         tags: cnb:arch:amd64
@@ -155,8 +155,8 @@ main:
               - 8.2-fpm-alpine-linux-arm64
             type: docker
 
-  # 每月构建 PHP 8.3 镜像
-  "crontab: 23 16 26 * *":
+  # 手动构建 PHP 8.3 镜像
+  build_php83:
     - name: 构建 PHP 8.3 AMD64
       runner:
         tags: cnb:arch:amd64
@@ -226,8 +226,8 @@ main:
               - 8.3-fpm-alpine-linux-arm64
             type: docker
 
-  # 每月构建 PHP 8.4 镜像
-  "crontab: 24 16 26 * *":
+  # 手动构建 PHP 8.4 镜像
+  build_php84:
     - name: 构建 PHP 8.4 AMD64
       runner:
         tags: cnb:arch:amd64
@@ -297,8 +297,8 @@ main:
               - 8.4-fpm-alpine-linux-arm64
             type: docker
 
-  # 每月构建 OpenResty 镜像
-  "crontab: 25 16 26 * *":
+  # 手动构建 OpenResty 镜像
+  build_openresty:
     - name: 构建 OpenResty AMD64
       runner:
         tags: cnb:arch:amd64
