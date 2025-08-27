@@ -14,7 +14,7 @@ main:
             password: ${GITHUB_ACCESS_TOKEN}
 
   # 手动构建 PHP 8.1 镜像
-  build_php81:
+  web_trigger_build_php81:
     - name: 构建 PHP 8.1 AMD64
       runner:
         tags: cnb:arch:amd64
@@ -85,7 +85,7 @@ main:
             type: docker
 
   # 手动构建 PHP 8.2 镜像
-  build_php82:
+  web_trigger_build_php82:
     - name: 构建 PHP 8.2 AMD64
       runner:
         tags: cnb:arch:amd64
@@ -156,7 +156,7 @@ main:
             type: docker
 
   # 手动构建 PHP 8.3 镜像
-  build_php83:
+  web_trigger_build_php83:
     - name: 构建 PHP 8.3 AMD64
       runner:
         tags: cnb:arch:amd64
@@ -227,7 +227,7 @@ main:
             type: docker
 
   # 手动构建 PHP 8.4 镜像
-  build_php84:
+  web_trigger_build_php84:
     - name: 构建 PHP 8.4 AMD64
       runner:
         tags: cnb:arch:amd64
@@ -298,7 +298,7 @@ main:
             type: docker
 
   # 手动构建 OpenResty 镜像
-  build_openresty:
+  web_trigger_build_openresty:
     - name: 构建 OpenResty AMD64
       runner:
         tags: cnb:arch:amd64
