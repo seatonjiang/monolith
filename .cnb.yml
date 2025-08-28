@@ -302,6 +302,7 @@ main:
     - name: 构建 OpenResty AMD64
       runner:
         tags: cnb:arch:amd64
+        cpus: 16
       services:
         - docker
       env:
@@ -321,6 +322,7 @@ main:
     - name: 构建 OpenResty ARM64
       runner:
         tags: cnb:arch:arm64:v8
+        cpus: 16
       services:
         - docker
       env:
