@@ -114,8 +114,6 @@ LABEL resty_strip_binaries="${RESTY_STRIP_BINARIES}"
 LABEL resty_luajit_options="${RESTY_LUAJIT_OPTIONS}"
 LABEL resty_pcre_options="${RESTY_PCRE_OPTIONS}"
 
-RUN sed -i "s/dl-cdn.alpinelinux.org/mirrors.cloud.tencent.com/g" /etc/apk/repositories
-
 RUN apk add --no-cache --virtual .build-deps \
         build-base \
         binutils \
