@@ -1,5 +1,5 @@
 ARG MARIADB_VERSION
-FROM mariadb:${MARIADB_VERSION:-11.8}
+FROM docker.cnb.cool/seatonjiang/monolith/mariadb:${MARIADB_VERSION:-11.8}
 
 # 替换 Ubuntu 镜像源
 ARG UBUNTU_MIRROR
