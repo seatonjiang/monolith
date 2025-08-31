@@ -10,6 +10,12 @@ branch:
       - name: 构建 phpMyAdmin 镜像
         event: web_trigger_build_phpmyadmin
 
+      - name: 构建 Memcached 镜像
+        event: web_trigger_build_memcached
+
+      - name: 构建 Redis 镜像
+        event: web_trigger_build_redis
+
       - name: 构建 PHP 8.1 镜像
         event: web_trigger_build_php81
 
