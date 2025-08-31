@@ -4,6 +4,9 @@ branch:
       - name: 构建 OpenResty 镜像
         event: web_trigger_build_openresty
 
+      - name: 构建 MariaDB 镜像
+        event: web_trigger_build_mariadb
+
       - name: 构建 PHP 8.1 镜像
         event: web_trigger_build_php81
 

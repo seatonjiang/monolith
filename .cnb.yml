@@ -369,3 +369,80 @@ main:
               - alpine-linux-amd64
               - alpine-linux-arm64
             type: docker
+
+  # 手动构建 MariaDB 镜像
+  web_trigger_build_mariadb:
+    - name: 构建 MariaDB AMD64
+      runner:
+        tags: cnb:arch:amd64
+        cpus: 1
+      services:
+        - docker
+      env:
+        IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/mariadb:11.8-linux-amd64
+      stages:
+        - name: 登录制品库
+          script: docker login -u ${CNB_TOKEN_USER_NAME} -p "${CNB_TOKEN}" ${CNB_DOCKER_REGISTRY}
+        - name: 拉取镜像
+          script: docker pull mariadb:11.8
+        - name: 重命名镜像
+          script: docker tag mariadb:11.8 ${IMAGE_TAG}
+        - name: 推送镜像
+          script: docker push ${IMAGE_TAG}
+        - name: 构建完成
+          type: cnb:resolve
+          options:
+            key: build-mariadb-amd64
+
+    - name: 构建 MariaDB ARM64
+      runner:
+        tags: cnb:arch:arm64:v8
+        cpus: 1
+      services:
+        - docker
+      env:
+        IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/mariadb:11.8-linux-arm64
+      stages:
+        - name: 登录制品库
+          script: docker login -u ${CNB_TOKEN_USER_NAME} -p "${CNB_TOKEN}" ${CNB_DOCKER_REGISTRY}
+        - name: 拉取镜像
+          script: docker pull mariadb:11.8
+        - name: 重命名镜像
+          script: docker tag mariadb:11.8 ${IMAGE_TAG}
+        - name: 推送镜像
+          script: docker push ${IMAGE_TAG}
+        - name: 构建完成
+          type: cnb:resolve
+          options:
+            key: build-mariadb-arm64
+
+    - name: 合并 MariaDB AMD64 和 ARM64
+      services:
+        - docker
+      env:
+        IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/mariadb:11.8
+      stages:
+        - name: 等待 AMD64 构建完成
+          type: cnb:await
+          options:
+            key: build-mariadb-amd64
+        - name: 等待 ARM64 构建完成
+          type: cnb:await
+          options:
+            key: build-mariadb-arm64
+        - name: 合并镜像
+          image: cnbcool/manifest
+          settings:
+            target: ${IMAGE_TAG}
+            template: ${IMAGE_TAG}-OS-ARCH
+            platforms:
+              - linux/amd64
+              - linux/arm64
+        - name: 删除临时镜像
+          type: artifact:remove-tag
+          options:
+            name: ${REPO_NAME}/mariadb
+            tags:
+              - 11.8-linux-amd64
+              - 11.8-linux-arm64
+            type: docker
