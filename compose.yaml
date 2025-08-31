@@ -77,7 +77,10 @@ services:
         ipv4_address: 172.16.24.12
 
   phpmyadmin:
-    image: docker.cnb.cool/seatonjiang/monolith/phpmyadmin:${PHPMYADMIN_VERSION:-5.2}
+    build:
+      context: ./services/phpmyadmin
+      args:
+        - PHPMYADMIN_VERSION=${PHPMYADMIN_VERSION:-5.2}
     container_name: phpmyadmin
     restart: always
     ports:
@@ -95,7 +98,11 @@ services:
         ipv4_address: 172.16.24.13
 
   memcached:
-    image: docker.cnb.cool/seatonjiang/monolith/memcached:${MEMCACHED_VERSION:-1.6-alpine}
+    build:
+      context: ./services/memcached
+      args:
+        - MEMCACHED_VERSION=${MEMCACHED_VERSION:-1.6-alpine}
+        - ALPINE_MIRROR=${ALPINE_MIRROR:-mirrors.cloud.tencent.com}
     container_name: memcached
     restart: always
     networks:
