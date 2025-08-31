@@ -417,6 +417,8 @@ main:
             key: build-mariadb-arm64
 
     - name: 合并 MariaDB AMD64 和 ARM64
+      runner:
+        cpus: 1
       services:
         - docker
       env:
