@@ -52,7 +52,7 @@ $RECYCLE.BIN/
 
 # 网站目录
 /wwwroot/*
-!wwwroot/default/phpinfo.php
+!/wwwroot/default/
 
 # 环境文件
 .env
