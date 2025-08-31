@@ -88,7 +88,9 @@ monolith
 │   └── mariadb-user-pwd            MariaDB 用户密码
 ├── services                        服务配置目录
 │   ├── mariadb                     MariaDB 配置目录
+│   ├── memcached                   Memcached 配置目录
 │   ├── openresty                   OpenResty 配置目录
+│   ├── phpmyadmin                  phpMyAdmin 配置目录
 │   ├── php                         PHP 配置目录
 │   └── redis                       Redis 配置目录
 ├── wwwroot                         Web 服务根目录

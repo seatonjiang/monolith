@@ -88,8 +88,10 @@ monolith
 │   └── mariadb-user-pwd            MariaDB user password
 ├── services                        Service configuration directory
 │   ├── mariadb                     MariaDB configuration directory
+│   ├── memcached                   Memcached configuration directory
 │   ├── openresty                   OpenResty configuration directory
 │   ├── php                         PHP configuration directory
+│   ├── phpmyadmin                  phpMyAdmin configuration directory
 │   └── redis                       Redis configuration directory
 ├── wwwroot                         Web service root directory
 │   └── default                     Default site directory
