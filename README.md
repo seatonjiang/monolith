@@ -7,7 +7,7 @@ Easily build PHP production environment based on Docker, integrating commonly us
 ### Step 1: Clone Repository
 
 ```bash
-git clone https://github.com/seatonjiang/monolith.git
+git clone --depth 1 https://github.com/seatonjiang/monolith.git
 ```
 
 ### Step 2: Edit Configuration

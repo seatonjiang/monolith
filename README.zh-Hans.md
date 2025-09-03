@@ -7,7 +7,7 @@
 ### 第一步：克隆仓库
 
 ```bash
-git clone https://cnb.cool/seatonjiang/monolith.git
+git clone --depth 1 https://cnb.cool/seatonjiang/monolith.git
 ```
 
 ### 第二步：编辑配置
@@ -42,6 +42,8 @@ MARIADB_DATABASE_NAME=monolith
 # phpMyAdmin 访问端口
 PHPMYADMIN_WEB_PORT=28080
 ```
+
+> **提示**：云服务器需要在防火墙中放通 80、443 以及 phpMyAdmin 访问端口（默认端口为 28080）。
 
 ### 第三步：修改密码
 
