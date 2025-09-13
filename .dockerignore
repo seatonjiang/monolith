@@ -71,3 +71,7 @@ README.zh-Hans.md
 .cnb.yml
 compose.yaml
 .dockerignore
+
+# CI 相关文件
+.github/
+.cnb/
