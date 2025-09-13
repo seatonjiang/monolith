@@ -1,0 +1,31 @@
+name: Sync Repository to CNB
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  sync-to-cnb:
+    name: Sync to CNB Repository
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the complete code repository (including all history)
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Get complete history for syncing all commits
+
+      # Use git-sync tool to synchronize code to CNB mirror repository
+      - name: Sync to CNB Repository
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:${{ github.workspace }} \
+            -w ${{ github.workspace }} \
+            -e PLUGIN_TARGET_URL="https://cnb.cool/seatonjiang/monolith.git" \
+            -e PLUGIN_AUTH_TYPE="https" \
+            -e PLUGIN_USERNAME="cnb" \
+            -e PLUGIN_PASSWORD=${{ secrets.GIT_PASSWORD }} \
+            -e PLUGIN_PUSH_TAGS="true" \
+            -e PLUGIN_FORCE="true" \
+            tencentcom/git-sync

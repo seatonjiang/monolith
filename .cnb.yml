@@ -1,0 +1,384 @@
+# 构建镜像模板
+.build-amd64-template: &build-amd64-template
+  runner:
+    tags: cnb:arch:amd64
+  services:
+    - docker
+  stages:
+    - name: 登录制品库
+      script: docker login -u ${CNB_TOKEN_USER_NAME} -p "${CNB_TOKEN}" ${CNB_DOCKER_REGISTRY}
+    - name: 构建镜像
+      script: docker build -t ${IMAGE_TAG} -f ${DOCKERFILE_PATH} .
+    - name: 推送镜像
+      script: docker push ${IMAGE_TAG}
+    - name: 构建完成
+      type: cnb:resolve
+      options:
+        key: ${BUILD_KEY}
+
+.build-arm64-template: &build-arm64-template
+  runner:
+    tags: cnb:arch:arm64:v8
+  services:
+    - docker
+  stages:
+    - name: 登录制品库
+      script: docker login -u ${CNB_TOKEN_USER_NAME} -p "${CNB_TOKEN}" ${CNB_DOCKER_REGISTRY}
+    - name: 构建镜像
+      script: docker build -t ${IMAGE_TAG} -f ${DOCKERFILE_PATH} .
+    - name: 推送镜像
+      script: docker push ${IMAGE_TAG}
+    - name: 构建完成
+      type: cnb:resolve
+      options:
+        key: ${BUILD_KEY}
+
+.merge-template: &merge-template
+  services:
+    - docker
+  stages:
+    - name: 等待 AMD64 构建完成
+      type: cnb:await
+      options:
+        key: ${AMD64_BUILD_KEY}
+    - name: 等待 ARM64 构建完成
+      type: cnb:await
+      options:
+        key: ${ARM64_BUILD_KEY}
+    - name: 合并镜像
+      image: cnbcool/manifest
+      settings:
+        target: ${FINAL_IMAGE_TAG}
+        template: ${FINAL_IMAGE_TAG}-OS-ARCH
+        platforms:
+          - linux/amd64
+          - linux/arm64
+    - name: 删除临时镜像
+      type: artifact:remove-tag
+      options:
+        name: ${REPO_NAME}/${IMAGE_NAME}
+        tags:
+          - ${IMAGE_TAG_AMD64}
+          - ${IMAGE_TAG_ARM64}
+        type: docker
+
+# 拉取镜像模板
+.pull-amd64-template: &pull-amd64-template
+  runner:
+    tags: cnb:arch:amd64
+    cpus: 1
+  services:
+    - docker
+  stages:
+    - name: 登录制品库
+      script: docker login -u ${CNB_TOKEN_USER_NAME} -p "${CNB_TOKEN}" ${CNB_DOCKER_REGISTRY}
+    - name: 拉取镜像
+      script: docker pull ${SOURCE_IMAGE}
+    - name: 重命名镜像
+      script: docker tag ${SOURCE_IMAGE} ${IMAGE_TAG}
+    - name: 推送镜像
+      script: docker push ${IMAGE_TAG}
+    - name: 构建完成
+      type: cnb:resolve
+      options:
+        key: ${BUILD_KEY}
+
+.pull-arm64-template: &pull-arm64-template
+  runner:
+    tags: cnb:arch:arm64:v8
+    cpus: 1
+  services:
+    - docker
+  stages:
+    - name: 登录制品库
+      script: docker login -u ${CNB_TOKEN_USER_NAME} -p "${CNB_TOKEN}" ${CNB_DOCKER_REGISTRY}
+    - name: 拉取镜像
+      script: docker pull ${SOURCE_IMAGE}
+    - name: 重命名镜像
+      script: docker tag ${SOURCE_IMAGE} ${IMAGE_TAG}
+    - name: 推送镜像
+      script: docker push ${IMAGE_TAG}
+    - name: 构建完成
+      type: cnb:resolve
+      options:
+        key: ${BUILD_KEY}
+
+main:
+  # 构建 PHP 8.1 镜像
+  web_trigger_build_php81:
+    - name: 构建 PHP 8.1 AMD64
+      <<: *build-amd64-template
+      env:
+        IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/php:8.1-fpm-alpine-linux-amd64
+        DOCKERFILE_PATH: ./.cnb/dockerfile/php-8.1
+        BUILD_KEY: build-php81-amd64
+
+    - name: 构建 PHP 8.1 ARM64
+      <<: *build-arm64-template
+      env:
+        IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/php:8.1-fpm-alpine-linux-arm64
+        DOCKERFILE_PATH: ./.cnb/dockerfile/php-8.1
+        BUILD_KEY: build-php81-arm64
+
+    - name: 合并 PHP 8.1 AMD64 和 ARM64
+      <<: *merge-template
+      env:
+        FINAL_IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/php:8.1-fpm-alpine
+        AMD64_BUILD_KEY: build-php81-amd64
+        ARM64_BUILD_KEY: build-php81-arm64
+        REPO_NAME: ${REPO_NAME}
+        IMAGE_NAME: php
+        IMAGE_TAG_AMD64: 8.1-fpm-alpine-linux-amd64
+        IMAGE_TAG_ARM64: 8.1-fpm-alpine-linux-arm64
+
+  # 构建 PHP 8.2 镜像
+  web_trigger_build_php82:
+    - name: 构建 PHP 8.2 AMD64
+      <<: *build-amd64-template
+      env:
+        IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/php:8.2-fpm-alpine-linux-amd64
+        DOCKERFILE_PATH: ./.cnb/dockerfile/php-8.2
+        BUILD_KEY: build-php82-amd64
+
+    - name: 构建 PHP 8.2 ARM64
+      <<: *build-arm64-template
+      env:
+        IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/php:8.2-fpm-alpine-linux-arm64
+        DOCKERFILE_PATH: ./.cnb/dockerfile/php-8.2
+        BUILD_KEY: build-php82-arm64
+
+    - name: 合并 PHP 8.2 AMD64 和 ARM64
+      <<: *merge-template
+      env:
+        FINAL_IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/php:8.2-fpm-alpine
+        AMD64_BUILD_KEY: build-php82-amd64
+        ARM64_BUILD_KEY: build-php82-arm64
+        REPO_NAME: ${REPO_NAME}
+        IMAGE_NAME: php
+        IMAGE_TAG_AMD64: 8.2-fpm-alpine-linux-amd64
+        IMAGE_TAG_ARM64: 8.2-fpm-alpine-linux-arm64
+
+  # 构建 PHP 8.3 镜像
+  web_trigger_build_php83:
+    - name: 构建 PHP 8.3 AMD64
+      <<: *build-amd64-template
+      env:
+        IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/php:8.3-fpm-alpine-linux-amd64
+        DOCKERFILE_PATH: ./.cnb/dockerfile/php-8.3
+        BUILD_KEY: build-php83-amd64
+
+    - name: 构建 PHP 8.3 ARM64
+      <<: *build-arm64-template
+      env:
+        IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/php:8.3-fpm-alpine-linux-arm64
+        DOCKERFILE_PATH: ./.cnb/dockerfile/php-8.3
+        BUILD_KEY: build-php83-arm64
+
+    - name: 合并 PHP 8.3 AMD64 和 ARM64
+      <<: *merge-template
+      env:
+        FINAL_IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/php:8.3-fpm-alpine
+        AMD64_BUILD_KEY: build-php83-amd64
+        ARM64_BUILD_KEY: build-php83-arm64
+        REPO_NAME: ${REPO_NAME}
+        IMAGE_NAME: php
+        IMAGE_TAG_AMD64: 8.3-fpm-alpine-linux-amd64
+        IMAGE_TAG_ARM64: 8.3-fpm-alpine-linux-arm64
+
+  # 构建 PHP 8.4 镜像
+  web_trigger_build_php84:
+    - name: 构建 PHP 8.4 AMD64
+      <<: *build-amd64-template
+      env:
+        IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/php:8.4-fpm-alpine-linux-amd64
+        DOCKERFILE_PATH: ./.cnb/dockerfile/php-8.4
+        BUILD_KEY: build-php84-amd64
+
+    - name: 构建 PHP 8.4 ARM64
+      <<: *build-arm64-template
+      env:
+        IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/php:8.4-fpm-alpine-linux-arm64
+        DOCKERFILE_PATH: ./.cnb/dockerfile/php-8.4
+        BUILD_KEY: build-php84-arm64
+
+    - name: 合并 PHP 8.4 AMD64 和 ARM64
+      <<: *merge-template
+      env:
+        FINAL_IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/php:8.4-fpm-alpine
+        AMD64_BUILD_KEY: build-php84-amd64
+        ARM64_BUILD_KEY: build-php84-arm64
+        REPO_NAME: ${REPO_NAME}
+        IMAGE_NAME: php
+        IMAGE_TAG_AMD64: 8.4-fpm-alpine-linux-amd64
+        IMAGE_TAG_ARM64: 8.4-fpm-alpine-linux-arm64
+
+  # 构建 OpenResty 镜像
+  web_trigger_build_openresty:
+    - name: 构建 OpenResty AMD64
+      <<: *build-amd64-template
+      runner:
+        tags: cnb:arch:amd64
+        cpus: 16
+      env:
+        IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/openresty:alpine-linux-amd64
+        DOCKERFILE_PATH: ./.cnb/dockerfile/openresty
+        BUILD_KEY: build-openresty-amd64
+
+    - name: 构建 OpenResty ARM64
+      <<: *build-arm64-template
+      runner:
+        tags: cnb:arch:arm64:v8
+        cpus: 16
+      env:
+        IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/openresty:alpine-linux-arm64
+        DOCKERFILE_PATH: ./.cnb/dockerfile/openresty
+        BUILD_KEY: build-openresty-arm64
+
+    - name: 合并 OpenResty AMD64 和 ARM64
+      <<: *merge-template
+      env:
+        FINAL_IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/openresty:alpine
+        AMD64_BUILD_KEY: build-openresty-amd64
+        ARM64_BUILD_KEY: build-openresty-arm64
+        REPO_NAME: ${REPO_NAME}
+        IMAGE_NAME: openresty
+        IMAGE_TAG_AMD64: alpine-linux-amd64
+        IMAGE_TAG_ARM64: alpine-linux-arm64
+
+  # 构建其他镜像（MariaDB、Redis、Memcached、phpMyAdmin）
+  web_trigger_build_images:
+    # MariaDB
+    - name: 构建 MariaDB AMD64
+      <<: *pull-amd64-template
+      imports:
+        - ./.cnb/version.yml
+      env:
+        SOURCE_IMAGE: mariadb:${MARIADB_VERSION}
+        IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/mariadb:${MARIADB_VERSION}-linux-amd64
+        BUILD_KEY: build-mariadb-amd64
+
+    - name: 构建 MariaDB ARM64
+      <<: *pull-arm64-template
+      imports:
+        - ./.cnb/version.yml
+      env:
+        SOURCE_IMAGE: mariadb:${MARIADB_VERSION}
+        IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/mariadb:${MARIADB_VERSION}-linux-arm64
+        BUILD_KEY: build-mariadb-arm64
+
+    - name: 合并 MariaDB AMD64 和 ARM64
+      <<: *merge-template
+      imports:
+        - ./.cnb/version.yml
+      runner:
+        cpus: 1
+      env:
+        FINAL_IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/mariadb:${MARIADB_VERSION}
+        AMD64_BUILD_KEY: build-mariadb-amd64
+        ARM64_BUILD_KEY: build-mariadb-arm64
+        REPO_NAME: ${REPO_NAME}
+        IMAGE_NAME: mariadb
+        IMAGE_TAG_AMD64: ${MARIADB_VERSION}-linux-amd64
+        IMAGE_TAG_ARM64: ${MARIADB_VERSION}-linux-arm64
+
+    # phpMyAdmin
+    - name: 构建 phpMyAdmin AMD64
+      <<: *pull-amd64-template
+      imports:
+        - ./.cnb/version.yml
+      env:
+        SOURCE_IMAGE: phpmyadmin:${PHPMYADMIN_VERSION}
+        IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/phpmyadmin:${PHPMYADMIN_VERSION}-linux-amd64
+        BUILD_KEY: build-phpmyadmin-amd64
+
+    - name: 构建 phpMyAdmin ARM64
+      <<: *pull-arm64-template
+      imports:
+        - ./.cnb/version.yml
+      env:
+        SOURCE_IMAGE: phpmyadmin:${PHPMYADMIN_VERSION}
+        IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/phpmyadmin:${PHPMYADMIN_VERSION}-linux-arm64
+        BUILD_KEY: build-phpmyadmin-arm64
+
+    - name: 合并 phpMyAdmin AMD64 和 ARM64
+      <<: *merge-template
+      imports:
+        - ./.cnb/version.yml
+      runner:
+        cpus: 1
+      env:
+        FINAL_IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/phpmyadmin:${PHPMYADMIN_VERSION}
+        AMD64_BUILD_KEY: build-phpmyadmin-amd64
+        ARM64_BUILD_KEY: build-phpmyadmin-arm64
+        REPO_NAME: ${REPO_NAME}
+        IMAGE_NAME: phpmyadmin
+        IMAGE_TAG_AMD64: ${PHPMYADMIN_VERSION}-linux-amd64
+        IMAGE_TAG_ARM64: ${PHPMYADMIN_VERSION}-linux-arm64
+
+    # Memcached
+    - name: 构建 Memcached AMD64
+      <<: *pull-amd64-template
+      imports:
+        - ./.cnb/version.yml
+      env:
+        SOURCE_IMAGE: memcached:${MEMCACHED_VERSION}
+        IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/memcached:${MEMCACHED_VERSION}-linux-amd64
+        BUILD_KEY: build-memcached-amd64
+
+    - name: 构建 Memcached ARM64
+      <<: *pull-arm64-template
+      imports:
+        - ./.cnb/version.yml
+      env:
+        SOURCE_IMAGE: memcached:${MEMCACHED_VERSION}
+        IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/memcached:${MEMCACHED_VERSION}-linux-arm64
+        BUILD_KEY: build-memcached-arm64
+
+    - name: 合并 Memcached AMD64 和 ARM64
+      <<: *merge-template
+      imports:
+        - ./.cnb/version.yml
+      runner:
+        cpus: 1
+      env:
+        FINAL_IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/memcached:${MEMCACHED_VERSION}
+        AMD64_BUILD_KEY: build-memcached-amd64
+        ARM64_BUILD_KEY: build-memcached-arm64
+        REPO_NAME: ${REPO_NAME}
+        IMAGE_NAME: memcached
+        IMAGE_TAG_AMD64: ${MEMCACHED_VERSION}-linux-amd64
+        IMAGE_TAG_ARM64: ${MEMCACHED_VERSION}-linux-arm64
+
+    # Redis
+    - name: 构建 Redis AMD64
+      <<: *pull-amd64-template
+      imports:
+        - ./.cnb/version.yml
+      env:
+        SOURCE_IMAGE: redis:${REDIS_VERSION}
+        IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/redis:${REDIS_VERSION}-linux-amd64
+        BUILD_KEY: build-redis-amd64
+
+    - name: 构建 Redis ARM64
+      <<: *pull-arm64-template
+      imports:
+        - ./.cnb/version.yml
+      env:
+        SOURCE_IMAGE: redis:${REDIS_VERSION}
+        IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/redis:${REDIS_VERSION}-linux-arm64
+        BUILD_KEY: build-redis-arm64
+
+    - name: 合并 Redis AMD64 和 ARM64
+      <<: *merge-template
+      imports:
+        - ./.cnb/version.yml
+      runner:
+        cpus: 1
+      env:
+        FINAL_IMAGE_TAG: ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/redis:${REDIS_VERSION}
+        AMD64_BUILD_KEY: build-redis-amd64
+        ARM64_BUILD_KEY: build-redis-arm64
+        REPO_NAME: ${REPO_NAME}
+        IMAGE_NAME: redis
+        IMAGE_TAG_AMD64: ${REDIS_VERSION}-linux-amd64
+        IMAGE_TAG_ARM64: ${REDIS_VERSION}-linux-arm64
