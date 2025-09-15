@@ -17,7 +17,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        php_version: ${{ fromJSON('["' + replace(github.event.inputs.php_versions, ',', '","') + '"]') }}
+        php_version: ${{ split(github.event.inputs.php_versions, ',') }}
 
     steps:
       - name: Checkout
