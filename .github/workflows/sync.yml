@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   workflow_run:
-    workflows: ["Build PHP Images"]
+    workflows: ["Build PHP 8.1 Image"]
     types:
       - completed
 
