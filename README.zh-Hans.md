@@ -215,6 +215,24 @@ rename-command EVAL     ""    # 禁用执行Lua脚本的命令
 rename-command FLUSHDB  ""    # 禁用清空当前数据库的命令
 ```
 
+## 📦 镜像列表
+
+### 构建的镜像
+
+| 镜像名称  | 镜像链接                                         | 镜像标签       | 构建时间   |
+| :-------- | :----------------------------------------------- | :------------- | :--------- |
+| PHP 8.1   | `docker.cnb.cool/seatonjiang/monolith/php`       | 8.1-fpm-alpine | 2025-05-15 |
+| PHP 8.2   | `docker.cnb.cool/seatonjiang/monolith/php`       | 8.2-fpm-alpine | 2025-05-15 |
+| PHP 8.3   | `docker.cnb.cool/seatonjiang/monolith/php`       | 8.3-fpm-alpine | 2025-05-15 |
+| PHP 8.4   | `docker.cnb.cool/seatonjiang/monolith/php`       | 8.4-fpm-alpine | 2025-05-15 |
+| OpenResty | `docker.cnb.cool/seatonjiang/monolith/openresty` | alpine         | 2025-05-15 |
+
+### 同步的镜像
+
+| 镜像名称  | 镜像链接                                         | 同步状态 | 同步时间   |
+| :-------- | :----------------------------------------------- | :------- | :--------- |
+| OpenResty | `docker.cnb.cool/seatonjiang/monolith/openresty` | ✔️       | 2025-05-15 |
+
 ## 📚 常见问题
 
 <details>
