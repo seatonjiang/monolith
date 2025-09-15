@@ -68,10 +68,8 @@ README.md
 README.zh-Hans.md
 
 # 开发工具配置
-.cnb.yml
 compose.yaml
 .dockerignore
 
 # CI 相关文件
 .github/
-.cnb/
