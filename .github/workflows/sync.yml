@@ -14,13 +14,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout the complete code repository (including all history)
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Get complete history for syncing all commits
+          fetch-depth: 0
 
-      # Use git-sync tool to synchronize code to CNB mirror repository
       - name: Sync to CNB Repository
         run: |
           docker run --rm \
@@ -29,7 +27,7 @@ jobs:
             -e PLUGIN_TARGET_URL="https://cnb.cool/seatonjiang/monolith.git" \
             -e PLUGIN_AUTH_TYPE="https" \
             -e PLUGIN_USERNAME="cnb" \
-            -e PLUGIN_PASSWORD=${{ secrets.GIT_PASSWORD }} \
+            -e PLUGIN_PASSWORD=${{ secrets.CNB_SYNC_TOKEN }} \
             -e PLUGIN_PUSH_TAGS="true" \
             -e PLUGIN_FORCE="true" \
             tencentcom/git-sync
