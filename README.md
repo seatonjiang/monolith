@@ -217,19 +217,18 @@ rename-command FLUSHDB  ""    # Disable command to clear current database
 
 ### Built Images
 
-| Name      | Registry                        | Tag            | Build Date |
-| :-------- | :------------------------------ | :------------- | :--------- |
-| PHP 8.1 | `ghcr.io/seatonjiang/php` | 8.1-fpm-alpine | 2025-09-15 |
-| PHP 8.2   | `ghcr.io/seatonjiang/php`       | 8.2-fpm-alpine | 2025-05-15 |
-| PHP 8.3   | `ghcr.io/seatonjiang/php`       | 8.3-fpm-alpine | 2025-05-15 |
-| PHP 8.4   | `ghcr.io/seatonjiang/php`       | 8.4-fpm-alpine | 2025-05-15 |
-| OpenResty | `ghcr.io/seatonjiang/openresty` | alpine         | 2025-05-15 |
+| Name | Registry | Tag | Build Date |
+| :--- | :--- | :--- | :--- |
+| PHP 8.1 | `ghcr.io/seatonjiang/php` | 8.1-fpm-alpine | |
+| PHP 8.2 | `ghcr.io/seatonjiang/php` | 8.2-fpm-alpine | |
+| PHP 8.3 | `ghcr.io/seatonjiang/php` | 8.3-fpm-alpine | |
+| PHP 8.4 | `ghcr.io/seatonjiang/php` | 8.4-fpm-alpine | |
+| OpenResty | `ghcr.io/seatonjiang/openresty` | alpine | |
 
 ### Synced Images
 
-| Name      | Registry                        | Status | Sync Date  |
-| :-------- | :------------------------------ | :----- | :--------- |
-| OpenResty | `ghcr.io/seatonjiang/openresty` | ✔️     | 2025-05-15 |
+| Name | Registry | Sync Date |
+| :--- | :--- | :--- |
 
 ## 📚 Common Questions
 
