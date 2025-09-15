@@ -117,5 +117,5 @@ jobs:
             echo "No changes in README files, no commit needed."
           else
             git commit -m "docs: update build record for image"
-            git push https://${{ secrets.PAT_FOR_WORKFLOWS }}@github.com/${{ github.repository }}.git HEAD:main
+            git push
           fi
