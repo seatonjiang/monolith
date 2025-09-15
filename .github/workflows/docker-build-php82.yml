@@ -70,7 +70,7 @@ jobs:
           git pull --rebase
 
           IMAGE_NAME="PHP 8.2"
-          BUILD_TIME=$(date -u '+%Y-%m-%d')
+          BUILD_TIME=$(TZ='Asia/Shanghai' date '+%Y-%m-%d')
           README_FILE="README.md"
           README_ZH_FILE="README.zh-Hans.md"
           TEMP_README="README.tmp"
