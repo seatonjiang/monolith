@@ -46,21 +46,19 @@ jobs:
 
       - name: Generate Dockerfile
         run: |
-          mkdir -p /tmp/docker-build
-          cat > /tmp/docker-build/Dockerfile.php << 'EOL'
+          mkdir -p /tmp/docker-build-php
+          cat > /tmp/docker-build-php/Dockerfile << 'EOL'
           FROM php:8.1-fpm-alpine
-
-          # ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
-
-          # RUN install-php-extensions redis memcached opcache pdo_mysql mysqli zip gd imagick igbinary bz2 exif bcmath intl
+          ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
+          RUN install-php-extensions redis memcached opcache pdo_mysql mysqli zip gd imagick igbinary bz2 exif bcmath intl
           EOL
-          cat /tmp/docker-build/Dockerfile.php
+          cat /tmp/docker-build-php/Dockerfile
 
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: /tmp/docker-build/Dockerfile.php
+          file: /tmp/docker-build-php/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
