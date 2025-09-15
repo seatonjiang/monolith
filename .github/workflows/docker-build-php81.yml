@@ -6,9 +6,9 @@ on:
 jobs:
   build_and_push:
     runs-on: ubuntu-latest
-    # permissions:
-    #   contents: write
-    #   packages: write
+    permissions:
+      contents: write
+      packages: write
 
     steps:
       - name: Checkout
