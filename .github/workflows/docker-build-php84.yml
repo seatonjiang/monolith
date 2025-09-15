@@ -1,4 +1,4 @@
-name: Build PHP 8.2 Image
+name: Build PHP 8.4 Image
 
 on:
   workflow_dispatch:
@@ -42,15 +42,15 @@ jobs:
             ghcr.io/seatonjiang/php
             docker.cnb.cool/seatonjiang/monolith/php
           tags: |
-            8.2-fpm-alpine
+            8.4-fpm-alpine
 
       - name: Generate Dockerfile
         run: |
           mkdir -p /tmp/docker-build-php
           cat > /tmp/docker-build-php/Dockerfile << 'EOL'
-          FROM php:8.2-fpm-alpine
-          ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
-          RUN install-php-extensions redis memcached opcache pdo_mysql mysqli zip gd imagick igbinary bz2 exif bcmath intl
+          FROM php:8.4-fpm-alpine
+          #ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
+          #RUN install-php-extensions redis memcached opcache pdo_mysql mysqli zip gd imagick igbinary bz2 exif bcmath intl
           EOL
           cat /tmp/docker-build-php/Dockerfile
 
@@ -69,7 +69,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git pull --rebase
 
-          IMAGE_NAME="PHP 8.2"
+          IMAGE_NAME="PHP 8.4"
           BUILD_TIME=$(date -u '+%Y-%m-%d')
           README_FILE="README.md"
           README_ZH_FILE="README.zh-Hans.md"
