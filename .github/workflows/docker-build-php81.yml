@@ -53,7 +53,7 @@ jobs:
           file: ./.github/dockerfile/php-8.1
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: true
-          tags: 8.1-fpm-alpine
+          tags: ${{ steps.meta.outputs.tags }}
 
       - name: Update build record
         run: |
