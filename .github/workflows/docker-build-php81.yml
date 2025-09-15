@@ -78,8 +78,8 @@ jobs:
             /^### Built Images/ { in_build_table = 1 }
             /^### Synced Images/ { in_build_table = 0 }
 
-            in_build_table && $1 ~ image_name {
-                printf "| %s | %s | %s | %s |", $1, $2, $3, new_date
+            in_build_table && $2 ~ image_name {
+                printf "| %s | %s | %s | %s |", $2, $3, $4, new_date
                 print ""
                 next
             }
