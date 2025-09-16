@@ -1,4 +1,4 @@
-name: 同步 Docker 镜像 → ghcr.io
+name: Synchronize Docker images
 
 permissions:
   packages: write
@@ -21,9 +21,6 @@ jobs:
 
       - name: 检出仓库
         uses: actions/checkout@v4
-        with:
-          # 使用 token 以便后续可以推送更改
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 设置 GHCR_USER 环境变量
         id: set_ghcr_user
