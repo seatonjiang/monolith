@@ -11,18 +11,6 @@ on:
         description: "要同步的 Docker 镜像列表，格式为 '镜像1:标签1,镜像2:标签2,镜像3:标签3'"
         required: true
         default: ""
-      ghcr_names:
-        description: "对应的同步后的镜像名称列表，格式为 '名称1,名称2,名称3'，如果某个镜像不需要指定名称，则用逗号填充，例如 ',,my-image' 表示第三个镜像同步后名称为 my-image，前两个自动提取"
-        required: false
-        default: ""
-      change_tag_to_latest:
-        description: "同步后是否将镜像标签改为 latest (是/否)"
-        required: true
-        type: choice
-        options:
-          - "是"
-          - "否"
-        default: "是"
 
 jobs:
   docker-image-sync:
@@ -74,7 +62,6 @@ jobs:
           ' README.md | sed -e 's/|//g' -e 's/^[ \t]*//;s/[ \t]*$//')
 
           IFS=',' read -r -a image_array <<< "${{ inputs.images }}"
-          IFS=',' read -r -a ghcr_name_array <<< "${{ inputs.ghcr_names }}"
 
           for i in "${!image_array[@]}"; do
             full_image=$(echo "${image_array[$i]}" | xargs)
@@ -89,7 +76,7 @@ jobs:
             echo "===== 开始处理 $full_image ====="
             current_image=$(echo "$full_image" | cut -d':' -f1)
             current_tag=$(echo "$full_image" | cut -s -d':' -f2); [ -z "$current_tag" ] && current_tag="latest"
-            target_tag="$current_tag"; [[ "$current_tag" =~ "alpine" ]] && target_tag="alpine" || { [ "${{ inputs.change_tag_to_latest }}" == "是" ] && target_tag="latest"; }
+            target_tag="$current_tag"; [[ "$current_tag" =~ "alpine" ]] && target_tag="alpine"
             
             if [ "$current_tag" == "latest" ] || [ "$target_tag" == "alpine" ]; then 
               sync_status="✔️"
@@ -97,12 +84,7 @@ jobs:
               sync_status="❌"
             fi
             
-            current_ghcr_name="${ghcr_name_array[$i]}"
-            if [ -z "$current_ghcr_name" ]; then 
-              IMAGE_NAME=$(basename "$current_image")
-            else 
-              IMAGE_NAME="$current_ghcr_name"
-            fi
+            IMAGE_NAME=$(basename "$current_image")
 
             SOURCE_IMAGE_URI="docker://$current_image:$current_tag"
             TARGET_IMAGE_URI="docker://ghcr.io/${{ env.GHCR_USER }}/$IMAGE_NAME:$target_tag"
