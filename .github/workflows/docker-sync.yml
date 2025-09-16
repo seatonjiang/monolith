@@ -94,7 +94,7 @@ jobs:
             # 增加错误处理，如果同步失败则打印错误并继续
             if skopeo copy --all "$SOURCE_IMAGE_URI" "$TARGET_IMAGE_URI"; then
               echo "✅ 镜像同步成功"
-            else*
+            else
               echo "❌ 镜像同步失败，请检查源镜像是否存在或网络连接。"
               # 同步失败，可以选择跳过该镜像的后续处理
               continue
