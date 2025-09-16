@@ -1,0 +1,206 @@
+name: 同步 Docker 镜像 → ghcr.io
+
+permissions:
+  packages: write
+  contents: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      images:
+        description: "要同步的 Docker 镜像列表，格式为 '镜像1:标签1,镜像2:标签2,镜像3:标签3'"
+        required: true
+        default: ""
+      ghcr_names:
+        description: "对应的同步后的镜像名称列表，格式为 '名称1,名称2,名称3'，如果某个镜像不需要指定名称，则用逗号填充，例如 ',,my-image' 表示第三个镜像同步后名称为 my-image，前两个自动提取"
+        required: false
+        default: ""
+      change_tag_to_latest:
+        description: "同步后是否将镜像标签改为 latest (是/否)"
+        required: true
+        type: choice
+        options:
+          - "是"
+          - "否"
+        default: "是"
+
+jobs:
+  docker-image-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 安装依赖工具
+        run: sudo apt-get update && sudo apt-get install -y jq skopeo
+
+      - name: 检出仓库
+        uses: actions/checkout@v4
+        with:
+          # 使用 token 以便后续可以推送更改
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 设置 GHCR_USER 环境变量
+        id: set_ghcr_user
+        run: echo "GHCR_USER=$(echo '${{ github.actor }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: 登录到 GitHub 容器注册表
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ env.GHCR_USER }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 设置 Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 同步镜像并更新 README
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase
+
+          # --- 1. 镜像同步与信息收集 ---
+          NEW_ROWS_DATA=""
+          UNIQUE_SEPARATOR="%%%"
+          TABLE_TITLE="### 已同步的 Docker 镜像"
+
+          existing_source_images=$(awk '
+            $0 == "'"${TABLE_TITLE}"'" { in_table=1; next }
+            in_table {
+              if (/^\| [0-9]/) { 
+                match($0, /\| *[^|]+ *\| *([^|]+) *\|/);
+                if (RSTART) { print substr($0, RSTART, RLENGTH) }
+              }
+              if (!/^\|/ && !/^$/) { in_table=0 }
+            }
+          ' README.md | sed -e 's/|//g' -e 's/^[ \t]*//;s/[ \t]*$//')
+
+          IFS=',' read -r -a image_array <<< "${{ inputs.images }}"
+          IFS=',' read -r -a ghcr_name_array <<< "${{ inputs.ghcr_names }}"
+
+          for i in "${!image_array[@]}"; do
+            full_image=$(echo "${image_array[$i]}" | xargs)
+            if [ -z "$full_image" ]; then continue; fi
+
+            if echo "$existing_source_images" | grep -qFx "$full_image"; then
+              echo "镜像 $full_image 已存在于 README.md，跳过。"
+              continue
+            fi
+            
+            echo "--------------------------------------------------"
+            echo "===== 开始处理 $full_image ====="
+            current_image=$(echo "$full_image" | cut -d':' -f1)
+            current_tag=$(echo "$full_image" | cut -s -d':' -f2); [ -z "$current_tag" ] && current_tag="latest"
+            target_tag="$current_tag"; [[ "$current_tag" =~ "alpine" ]] && target_tag="alpine" || { [ "${{ inputs.change_tag_to_latest }}" == "是" ] && target_tag="latest"; }
+            
+            if [ "$current_tag" == "latest" ] || [ "$target_tag" == "alpine" ]; then 
+              sync_status="✔️"
+            else 
+              sync_status="❌"
+            fi
+            
+            current_ghcr_name="${ghcr_name_array[$i]}"
+            if [ -z "$current_ghcr_name" ]; then 
+              IMAGE_NAME=$(basename "$current_image")
+            else 
+              IMAGE_NAME="$current_ghcr_name"
+            fi
+
+            SOURCE_IMAGE_URI="docker://$current_image:$current_tag"
+            TARGET_IMAGE_URI="docker://ghcr.io/${{ env.GHCR_USER }}/$IMAGE_NAME:$target_tag"
+            
+            # --- 这是补充的完整同步逻辑 ---
+            echo "源镜像: $SOURCE_IMAGE_URI"
+            echo "目标镜像: $TARGET_IMAGE_URI"
+            
+            # 使用 skopeo copy 进行同步，--all 参数会自动处理多架构
+            # 增加错误处理，如果同步失败则打印错误并继续
+            if skopeo copy --all "$SOURCE_IMAGE_URI" "$TARGET_IMAGE_URI"; then
+              echo "✅ 镜像同步成功"
+            else
+              echo "❌ 镜像同步失败，请检查源镜像是否存在或网络连接。"
+              # 同步失败，可以选择跳过该镜像的后续处理
+              continue
+            fi
+            # --- 同步逻辑结束 ---
+
+            # 创建 docker-compose.yaml 文件
+            mkdir -p docker-compose
+            cp docker-compose/example.yaml "docker-compose/$IMAGE_NAME.yaml"
+
+            # 准备新行的数据
+            pull_cmd="ghcr.io/${{ env.GHCR_USER }}/$IMAGE_NAME"
+            if [ "$target_tag" != "latest" ]; then
+              pull_cmd="$pull_cmd:$target_tag"
+            fi
+            pull_cmd="\`$pull_cmd\`"
+            compose_file="[yaml](https://github.com/${{ github.repository }}/blob/main/docker-compose/$IMAGE_NAME.yaml)"
+            
+            # 新增一列更新时间，默认空
+            new_line_data="${full_image}${UNIQUE_SEPARATOR}${pull_cmd}${UNIQUE_SEPARATOR}${compose_file}${UNIQUE_SEPARATOR}${sync_status}${UNIQUE_SEPARATOR}"
+            NEW_ROWS_DATA+="${new_line_data}\n"
+          done
+
+          if [ -z "$NEW_ROWS_DATA" ]; then
+            echo "--------------------------------------------------"
+            echo "没有新的镜像被添加，无需更新 README.md。"
+            exit 0
+          fi
+
+          # --- 2. README 更新、排序与重写 ---
+          echo "--------------------------------------------------"
+          echo "开始更新 README.md..."
+
+          existing_rows=$(awk '
+            $0 == "'"${TABLE_TITLE}"'" { in_table=1; next }
+            in_table {
+              if (/^\| [0-9]/) { print }
+              if (!/^\|/ && !/^$/) { in_table=0 }
+            }
+          ' README.md)
+
+          sorted_table_rows=$(
+            {
+              echo "$existing_rows" | sed 's/^| [0-9]\{1,\} *|/|/'
+              echo -e "$NEW_ROWS_DATA" | sed '/^$/d' | awk -F"${UNIQUE_SEPARATOR}" '{printf("| %s | %s | %s | %s | %s |\n", $1, $2, $3, $4, $5)}'
+            } | awk -F'|' '
+              {
+                key = $3;
+                gsub(/`/, "", key);
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", key);
+                sub(/.*\/|:[^:]*$/, "", key);
+                print key "@@@" $0;
+              }
+            ' | sort -f | sed 's/^.*@@@//' | awk 'BEGIN{count=1} {printf("| %-3s %s\n", count++, $0)}'
+          )
+
+          {
+            echo "${TABLE_TITLE}"
+            echo ""
+            echo "|   | 源镜像 | pull 镜像 | docker-compose | 同步 | 更新时间 |"
+            echo "| ---- | -------- | --------- | -------------- | ---- | -------- |"
+            echo "$sorted_table_rows"
+          } > new_table.tmp
+
+          awk '
+            BEGIN { replaced=0 }
+            $0 == "'"${TABLE_TITLE}"'" && !replaced {
+              while ((getline line < "new_table.tmp") > 0) { print line }
+              close("new_table.tmp");
+              replaced=1;
+              skipping=1;
+              next;
+            }
+            skipping {
+              if (!/^\|/ && !/^$/) { skipping=0 } else { next }
+            }
+            { print }
+          ' README.md > README.tmp && mv README.tmp README.md
+          rm new_table.tmp
+
+          # 提交更改
+          git add README.md docker-compose/
+          if git diff --staged --quiet; then
+            echo "没有新的镜像或文件变更可提交。"
+          else
+            git commit -m "chore(sync): 同步新镜像并自动排序更新README"
+            git push
+          fi
