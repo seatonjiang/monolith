@@ -104,20 +104,18 @@ jobs:
             fi
             # --- 同步逻辑结束 ---
 
-            # 创建 docker-compose.yaml 文件
-            mkdir -p docker-compose
-            cp docker-compose/example.yaml "docker-compose/$IMAGE_NAME.yaml"
-
             # 准备新行的数据
-            pull_cmd="ghcr.io/${{ env.GHCR_USER }}/$IMAGE_NAME"
+            registry="ghcr.io/${{ env.GHCR_USER }}/$IMAGE_NAME"
             if [ "$target_tag" != "latest" ]; then
-              pull_cmd="$pull_cmd:$target_tag"
+              registry="$registry:$target_tag"
             fi
-            pull_cmd="\`$pull_cmd\`"
-            compose_file="[yaml](https://github.com/${{ github.repository }}/blob/main/docker-compose/$IMAGE_NAME.yaml)"
+            registry="\`$registry\`"
             
-            # 新增一列更新时间，默认空
-            new_line_data="${full_image}${UNIQUE_SEPARATOR}${pull_cmd}${UNIQUE_SEPARATOR}${compose_file}${UNIQUE_SEPARATOR}${sync_status}${UNIQUE_SEPARATOR}"
+            # 获取当前日期作为同步日期
+            sync_date=$(date +"%Y-%m-%d")
+            
+            # 准备新行数据
+            new_line_data="${IMAGE_NAME}${UNIQUE_SEPARATOR}${registry}${UNIQUE_SEPARATOR}${sync_date}"
             NEW_ROWS_DATA+="${new_line_data}\n"
           done
 
@@ -134,31 +132,29 @@ jobs:
           existing_rows=$(awk '
             $0 == "'"${TABLE_TITLE}"'" { in_table=1; next }
             in_table {
-              if (/^\| [0-9]/) { print }
+              if (/^\|/ && !/^\| :/) { print }
               if (!/^\|/ && !/^$/) { in_table=0 }
             }
           ' README.md)
 
           sorted_table_rows=$(
             {
-              echo "$existing_rows" | sed 's/^| [0-9]\{1,\} *|/|/'
-              echo -e "$NEW_ROWS_DATA" | sed '/^$/d' | awk -F"${UNIQUE_SEPARATOR}" '{printf("| %s | %s | %s | %s | %s |\n", $1, $2, $3, $4, $5)}'
+              echo "$existing_rows" 
+              echo -e "$NEW_ROWS_DATA" | sed '/^$/d' | awk -F"${UNIQUE_SEPARATOR}" '{printf("| %s | %s | %s |\n", $1, $2, $3)}'
             } | awk -F'|' '
               {
-                key = $3;
-                gsub(/`/, "", key);
+                key = $2;
                 gsub(/^[[:space:]]+|[[:space:]]+$/, "", key);
-                sub(/.*\/|:[^:]*$/, "", key);
                 print key "@@@" $0;
               }
-            ' | sort -f | sed 's/^.*@@@//' | awk 'BEGIN{count=1} {printf("| %-3s %s\n", count++, $0)}'
+            ' | sort -f | sed 's/^.*@@@//'
           )
 
           {
             echo "${TABLE_TITLE}"
             echo ""
-            echo "|   | 源镜像 | pull 镜像 | docker-compose | 同步 | 更新时间 |"
-            echo "| ---- | -------- | --------- | -------------- | ---- | -------- |"
+            echo "| Name | Registry | Sync Date |"
+            echo "| :--- | :--- | :--- |"
             echo "$sorted_table_rows"
           } > new_table.tmp
 
@@ -179,10 +175,10 @@ jobs:
           rm new_table.tmp
 
           # 提交更改
-          git add README.md docker-compose/
+          git add README.md
           if git diff --staged --quiet; then
             echo "没有新的镜像或文件变更可提交。"
           else
-            git commit -m "chore(sync): 同步新镜像并自动排序更新README"
+            git commit -m "chore(sync): 同步新镜像并更新README"
             git push
           fi
