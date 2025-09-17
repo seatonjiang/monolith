@@ -212,11 +212,76 @@ jobs:
             }
           ' README.md)
 
+          # 处理新行数据，合并相同镜像的标签
+          processed_new_rows=""
+          while IFS= read -r line; do
+            if [ -z "$line" ]; then continue; fi
+            
+            # 解析新行数据
+            img_name=$(echo "$line" | awk -F"${UNIQUE_SEPARATOR}" '{print $1}')
+            img_registry=$(echo "$line" | awk -F"${UNIQUE_SEPARATOR}" '{print $2}')
+            img_tags=$(echo "$line" | awk -F"${UNIQUE_SEPARATOR}" '{print $3}')
+            img_date=$(echo "$line" | awk -F"${UNIQUE_SEPARATOR}" '{print $4}')
+            
+            # 检查是否已存在于现有行中
+            found=false
+            updated_existing_rows=""
+            
+            while IFS= read -r existing_line; do
+              if [ -z "$existing_line" ]; then continue; fi
+              
+              # 提取现有行的镜像名称
+              existing_name=$(echo "$existing_line" | awk -F'|' '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+              
+              if [ "$existing_name" = "$img_name" ]; then
+                # 找到匹配的行，更新标签
+                existing_registry=$(echo "$existing_line" | awk -F'|' '{print $3}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+                existing_tags=$(echo "$existing_line" | awk -F'|' '{print $4}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+                existing_date=$(echo "$existing_line" | awk -F'|' '{print $5}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+                
+                # 合并标签，避免重复
+                merged_tags="$existing_tags"
+                for tag in $(echo "$img_tags" | tr ',' ' '); do
+                  if [[ "$merged_tags" != *"$tag"* ]]; then
+                    if [ -z "$merged_tags" ]; then
+                      merged_tags="$tag"
+                    else
+                      merged_tags="$merged_tags,$tag"
+                    fi
+                  fi
+                done
+                
+                # 更新行
+                updated_line="| $existing_name | $existing_registry | $merged_tags | $img_date |"
+                updated_existing_rows="$updated_existing_rows$updated_line\n"
+                found=true
+              else
+                # 保留原行
+                updated_existing_rows="$updated_existing_rows$existing_line\n"
+              fi
+            done <<< "$existing_rows"
+            
+            if [ "$found" = true ]; then
+              # 已更新现有行
+              existing_rows="$updated_existing_rows"
+            else
+              # 添加为新行
+              processed_new_rows="$processed_new_rows$line\n"
+            fi
+          done <<< "$NEW_ROWS_DATA"
+          
+          # 格式化处理后的新行
+          formatted_new_rows=""
+          if [ -n "$processed_new_rows" ]; then
+            formatted_new_rows=$(echo -e "$processed_new_rows" | sed '/^$/d' | awk -F"${UNIQUE_SEPARATOR}" '{printf("| %s | %s | %s | %s |\n", $1, $2, $3, $4)}')
+          fi
+          
+          # 合并并排序所有行
           sorted_table_rows=$(
             {
               echo "$existing_rows" 
-              echo -e "$NEW_ROWS_DATA" | sed '/^$/d' | awk -F"${UNIQUE_SEPARATOR}" '{printf("| %s | %s | %s | %s |\n", $1, $2, $3, $4)}'
-            } | awk -F'|' '
+              echo -e "$formatted_new_rows"
+            } | grep -v '^$' | awk -F'|' '
               {
                 key = $2;
                 gsub(/^[[:space:]]+|[[:space:]]+$/, "", key);
