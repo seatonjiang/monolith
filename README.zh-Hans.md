@@ -231,11 +231,7 @@ rename-command FLUSHDB  ""    # 禁用清空当前数据库的命令
 
 | 镜像名称 | 镜像链接 | 标签 | 同步时间 |
 | :--- | :--- | :--- | :--- |
-| mariadb | `ghcr.io/seatonjiang/mariadb:11.8` | 11.8 | 2025-09-17 |
-| mariadb | `ghcr.io/seatonjiang/mariadb:12.0` | `ghcr.io/seatonjiang/mariadb:11.8`,12.0 | 2025-09-17 |
-| Name | Registry | Tags |Sync Date |
-| redis | `ghcr.io/seatonjiang/redis:7` | 7 | 2025-09-17 |
-| redis | `ghcr.io/seatonjiang/redis:8` | 8 | 2025-09-17 |
+
 ## 📚 常见问题
 
 <details>
