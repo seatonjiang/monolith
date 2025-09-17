@@ -127,8 +127,7 @@ jobs:
               # 清理临时目录
               rm -rf "/tmp/docker-sync/$IMAGE_NAME:$target_tag"
             else
-              echo "❌ 镜像同步到本地失败，请检查源镜像是否存在或网络连接。"
-              # 同步失败，可以选择跳过该镜像的后续处理
+              echo "❌ 镜像同步到本地失败"
               continue
             fi
 
@@ -142,8 +141,8 @@ jobs:
             fi
             registry="\`$registry\`"
             
-            # 获取当前日期作为同步日期
-            sync_date=$(date +"%Y-%m-%d")
+            # 获取当前日期作为同步日期（使用北京时间）
+            sync_date=$(TZ='Asia/Shanghai' date +"%Y-%m-%d")
             
             # 准备新行数据
             new_line_data="${IMAGE_NAME}${UNIQUE_SEPARATOR}${registry}${UNIQUE_SEPARATOR}${sync_date}"
@@ -163,7 +162,7 @@ jobs:
           existing_rows=$(awk '
             $0 == "'"${TABLE_TITLE}"'" { in_table=1; next }
             in_table {
-              if (/^\|/ && !/^\| :/) { print }
+              if (/^\|/ && !/^\| :/ && !/^\| Name \| Registry \| Sync Date \|/) { print }
               if (!/^\|/ && !/^$/) { in_table=0 }
             }
           ' README.md)
