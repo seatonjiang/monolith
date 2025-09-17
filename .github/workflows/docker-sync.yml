@@ -16,25 +16,32 @@ jobs:
   docker-image-sync:
     runs-on: ubuntu-latest
     steps:
-      - name: 安装依赖工具
-        run: sudo apt-get update && sudo apt-get install -y jq skopeo
-
-      - name: 检出仓库
+      - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: sudo apt-get update && sudo apt-get install -y jq skopeo
 
       - name: 设置 GHCR_USER 环境变量
         id: set_ghcr_user
         run: echo "GHCR_USER=$(echo '${{ github.actor }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
-      - name: 登录到 GitHub 容器注册表
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: seatonjiang
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 设置 Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Login to CNB
+        uses: docker/login-action@v3
+        with:
+          registry: docker.cnb.cool
+          username: cnb
+          password: ${{ secrets.CNB_DOCKER_TOKEN }}
 
       - name: 同步镜像并更新 README
         run: |
@@ -45,7 +52,7 @@ jobs:
           # --- 1. 镜像同步与信息收集 ---
           NEW_ROWS_DATA=""
           UNIQUE_SEPARATOR="%%%"
-          TABLE_TITLE="### 已同步的 Docker 镜像"
+          TABLE_TITLE="### Synced Images"
 
           existing_source_images=$(awk '
             $0 == "'"${TABLE_TITLE}"'" { in_table=1; next }
@@ -84,18 +91,43 @@ jobs:
             IMAGE_NAME=$(basename "$current_image")
 
             SOURCE_IMAGE_URI="docker://$current_image:$current_tag"
-            TARGET_IMAGE_URI="docker://ghcr.io/${{ env.GHCR_USER }}/$IMAGE_NAME:$target_tag"
+            GHCR_IMAGE_URI="docker://ghcr.io/seatonjiang/$IMAGE_NAME:$target_tag"
+            CNB_IMAGE_URI="docker://docker.cnb.cool/seatonjiang/monolith/$IMAGE_NAME:$target_tag"
             
             # --- 这是补充的完整同步逻辑 ---
             echo "源镜像: $SOURCE_IMAGE_URI"
-            echo "目标镜像: $TARGET_IMAGE_URI"
+            echo "GHCR目标镜像: $GHCR_IMAGE_URI"
+            echo "CNB目标镜像: $CNB_IMAGE_URI"
             
-            # 使用 skopeo copy 进行同步，--all 参数会自动处理多架构
-            # 增加错误处理，如果同步失败则打印错误并继续
-            if skopeo copy --all "$SOURCE_IMAGE_URI" "$TARGET_IMAGE_URI"; then
-              echo "✅ 镜像同步成功"
+            # 先同步到本地临时目录
+            LOCAL_IMAGE_URI="dir:/tmp/docker-sync/$IMAGE_NAME:$target_tag"
+            echo "同步到本地: $LOCAL_IMAGE_URI"
+            
+            # 创建临时目录
+            mkdir -p /tmp/docker-sync
+            
+            # 使用 skopeo copy 进行同步到本地，--all 参数会自动处理多架构
+            if skopeo copy --all "$SOURCE_IMAGE_URI" "$LOCAL_IMAGE_URI"; then
+              echo "✅ 镜像同步到本地成功"
+              
+              # 从本地同步到 GHCR
+              if skopeo copy --all "$LOCAL_IMAGE_URI" "$GHCR_IMAGE_URI"; then
+                echo "✅ 镜像同步到 GHCR 成功"
+              else
+                echo "❌ 镜像同步到 GHCR 失败"
+              fi
+              
+              # 从本地同步到 CNB
+              if skopeo copy --all "$LOCAL_IMAGE_URI" "$CNB_IMAGE_URI"; then
+                echo "✅ 镜像同步到 CNB 成功"
+              else
+                echo "❌ 镜像同步到 CNB 失败"
+              fi
+              
+              # 清理临时目录
+              rm -rf "/tmp/docker-sync/$IMAGE_NAME:$target_tag"
             else
-              echo "❌ 镜像同步失败，请检查源镜像是否存在或网络连接。"
+              echo "❌ 镜像同步到本地失败，请检查源镜像是否存在或网络连接。"
               # 同步失败，可以选择跳过该镜像的后续处理
               continue
             fi
