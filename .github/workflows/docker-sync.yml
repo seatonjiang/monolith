@@ -54,16 +54,22 @@ jobs:
           UNIQUE_SEPARATOR="%%%"
           TABLE_TITLE="### Synced Images"
 
-          existing_source_images=$(awk '
+          # 从README中提取现有镜像信息（名称和标签）
+          existing_image_info=$(awk '
             $0 == "'"${TABLE_TITLE}"'" { in_table=1; next }
             in_table {
-              if (/^\| [0-9]/) { 
-                match($0, /\| *[^|]+ *\| *([^|]+) *\|/);
-                if (RSTART) { print substr($0, RSTART, RLENGTH) }
+              if (/^\|/) { 
+                # 提取镜像名称和标签信息
+                match($0, /\| *([^|]+) *\| *[^|]+ *\| *([^|]+) *\|/);
+                if (RSTART) { 
+                  name=$2; gsub(/^[ \t]*|[ \t]*$/, "", name);
+                  tags=$4; gsub(/^[ \t]*|[ \t]*$/, "", tags);
+                  print name ":::" tags;
+                }
               }
               if (!/^\|/ && !/^$/) { in_table=0 }
             }
-          ' README.md | sed -e 's/|//g' -e 's/^[ \t]*//;s/[ \t]*$//')
+          ' README.md)
 
           IFS=',' read -r -a image_array <<< "${{ inputs.images }}"
 
@@ -71,15 +77,36 @@ jobs:
             full_image=$(echo "${image_array[$i]}" | xargs)
             if [ -z "$full_image" ]; then continue; fi
 
-            if echo "$existing_source_images" | grep -qFx "$full_image"; then
-              echo "镜像 $full_image 已存在于 README.md，跳过。"
+            # 检查镜像和标签是否已存在
+            current_image=$(echo "$full_image" | cut -d':' -f1)
+            current_tag=$(echo "$full_image" | cut -s -d':' -f2); [ -z "$current_tag" ] && current_tag="latest"
+            IMAGE_NAME=$(basename "$current_image")
+            
+            # 检查镜像是否存在，以及标签是否已包含
+            image_exists=false
+            existing_tags=""
+            
+            while IFS= read -r line; do
+              if [ -z "$line" ]; then continue; fi
+              
+              img_name=$(echo "$line" | cut -d':' -f1 | cut -d':::' -f1)
+              img_tags=$(echo "$line" | cut -d':::' -f2)
+              
+              if [ "$img_name" = "$IMAGE_NAME" ]; then
+                image_exists=true
+                existing_tags="$img_tags"
+                break
+              fi
+            done <<< "$existing_image_info"
+            
+            # 检查当前标签是否已存在于标签列表中
+            if [ "$image_exists" = true ] && [[ "$existing_tags" == *"$current_tag"* ]]; then
+              echo "镜像 $IMAGE_NAME 的标签 $current_tag 已存在于 README.md，跳过。"
               continue
             fi
             
             echo "--------------------------------------------------"
             echo "===== 开始处理 $full_image ====="
-            current_image=$(echo "$full_image" | cut -d':' -f1)
-            current_tag=$(echo "$full_image" | cut -s -d':' -f2); [ -z "$current_tag" ] && current_tag="latest"
             target_tag="$current_tag"; [[ "$current_tag" =~ "alpine" ]] && target_tag="alpine"
             
             if [ "$current_tag" == "latest" ] || [ "$target_tag" == "alpine" ]; then 
@@ -87,8 +114,6 @@ jobs:
             else 
               sync_status="❌"
             fi
-            
-            IMAGE_NAME=$(basename "$current_image")
 
             SOURCE_IMAGE_URI="docker://$current_image:$current_tag"
             GHCR_IMAGE_URI="docker://ghcr.io/seatonjiang/$IMAGE_NAME:$target_tag"
@@ -144,8 +169,26 @@ jobs:
             # 获取当前日期作为同步日期（使用北京时间）
             sync_date=$(TZ='Asia/Shanghai' date +"%Y-%m-%d")
             
-            # 准备新行数据
-            new_line_data="${IMAGE_NAME}${UNIQUE_SEPARATOR}${registry}${UNIQUE_SEPARATOR}${sync_date}"
+            # 处理标签列表
+            if [ "$image_exists" = true ]; then
+              # 如果镜像已存在，将新标签添加到现有标签列表
+              if [ -z "$existing_tags" ]; then
+                tags="$current_tag"
+              else
+                # 检查标签是否已存在
+                if [[ "$existing_tags" != *"$current_tag"* ]]; then
+                  tags="$existing_tags,$current_tag"
+                else
+                  tags="$existing_tags"
+                fi
+              fi
+            else
+              # 如果是新镜像，标签就是当前标签
+              tags="$current_tag"
+            fi
+            
+            # 准备新行数据，添加标签列
+            new_line_data="${IMAGE_NAME}${UNIQUE_SEPARATOR}${registry}${UNIQUE_SEPARATOR}${tags}${UNIQUE_SEPARATOR}${sync_date}"
             NEW_ROWS_DATA+="${new_line_data}\n"
           done
 
@@ -162,7 +205,7 @@ jobs:
           existing_rows=$(awk '
             $0 == "'"${TABLE_TITLE}"'" { in_table=1; next }
             in_table {
-              if (/^\|/ && !/^\| :/ && !/^\| Name \| Registry \| Sync Date \|/) { print }
+              if (/^\|/ && !/^\| :/ && !/^\| Name \| Registry \| Tags \| Sync Date \|/) { print }
               if (!/^\|/ && !/^$/) { in_table=0 }
             }
           ' README.md)
@@ -170,7 +213,7 @@ jobs:
           sorted_table_rows=$(
             {
               echo "$existing_rows" 
-              echo -e "$NEW_ROWS_DATA" | sed '/^$/d' | awk -F"${UNIQUE_SEPARATOR}" '{printf("| %s | %s | %s |\n", $1, $2, $3)}'
+              echo -e "$NEW_ROWS_DATA" | sed '/^$/d' | awk -F"${UNIQUE_SEPARATOR}" '{printf("| %s | %s | %s | %s |\n", $1, $2, $3, $4)}'
             } | awk -F'|' '
               {
                 key = $2;
@@ -183,8 +226,8 @@ jobs:
           {
             echo "${TABLE_TITLE}"
             echo ""
-            echo "| Name | Registry | Sync Date |"
-            echo "| :--- | :--- | :--- |"
+            echo "| Name | Registry | Tags | Sync Date |"
+            echo "| :--- | :--- | :--- | :--- |"
             echo "$sorted_table_rows"
           } > new_table.tmp
 
@@ -202,13 +245,45 @@ jobs:
             }
             { print }
           ' README.md > README.tmp && mv README.tmp README.md
-          rm new_table.tmp
 
+          # 更新中文版 README
+          echo "--------------------------------------------------"
+          echo "开始更新 README.zh-Hans.md..."
+          
+          # 复制英文版表格到中文版
+          awk '
+            BEGIN { replaced=0 }
+            $0 == "### 同步的镜像" && !replaced {
+              while ((getline line < "new_table.tmp") > 0) {
+                if (line == "### Synced Images") {
+                  print "### 同步的镜像";
+                } else if (line == "| Name | Registry | Tags | Sync Date |") {
+                  print "| 镜像名称 | 镜像链接 | 标签 | 同步时间 |";
+                } else if (line == "| :--- | :--- | :--- | :--- |") {
+                  print "| :--- | :--- | :--- | :--- |";
+                } else {
+                  print line;
+                }
+              }
+              close("new_table.tmp");
+              replaced=1;
+              skipping=1;
+              next;
+            }
+            skipping {
+              if (!/^\|/ && !/^$/) { skipping=0 } else { next }
+            }
+            { print }
+          ' README.zh-Hans.md > README.zh-Hans.tmp && mv README.zh-Hans.tmp README.zh-Hans.md
+          
           # 提交更改
-          git add README.md
+          git add README.md README.zh-Hans.md
           if git diff --staged --quiet; then
             echo "没有新的镜像或文件变更可提交。"
           else
             git commit -m "chore(sync): 同步新镜像并更新README"
             git push
           fi
+          
+          # 清理临时文件
+          rm -f new_table.tmp
