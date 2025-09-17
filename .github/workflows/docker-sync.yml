@@ -258,15 +258,19 @@ jobs:
           
           # 复制英文版表格到中文版
           awk '
-            BEGIN { replaced=0 }
+            BEGIN { replaced=0; title_printed=0 }
             $0 == "### 同步的镜像" && !replaced {
+              print "### 同步的镜像";
+              print "";
+              print "| 镜像名称 | 镜像链接 | 标签 | 同步时间 |";
+              print "| :--- | :--- | :--- | :--- |";
+              title_printed=1;
+              
               while ((getline line < "new_table.tmp") > 0) {
-                if (line == "### Synced Images") {
-                  print "### 同步的镜像";
-                } else if (line == "| Name | Registry | Tags | Sync Date |") {
-                  print "| 镜像名称 | 镜像链接 | 标签 | 同步时间 |";
-                } else if (line == "| :--- | :--- | :--- | :--- |") {
-                  print "| :--- | :--- | :--- | :--- |";
+                # 跳过英文版的标题和表头行
+                if (line == "### Synced Images" || line == "| Name | Registry | Tags | Sync Date |" || 
+                    line == "| :--- | :--- | :--- | :--- |" || line == "") {
+                  continue;
                 } else {
                   print line;
                 }
