@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       images:
-        description: "要同步的 Docker 镜像列表，格式为 '镜像1:标签1,镜像2:标签2,镜像3:标签3'"
+        description: "Docker image information"
         required: true
         default: ""
 
@@ -44,317 +44,115 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git pull --rebase
-
-          # --- 1. 镜像同步与信息收集 ---
-          NEW_ROWS_DATA=""
-          UNIQUE_SEPARATOR="%%%"
-          TABLE_TITLE="### Synced Images"
-
-          # 从README中提取现有镜像信息（名称和标签）
-          existing_image_info=$(awk '
-            $0 == "'"${TABLE_TITLE}"'" { in_table=1; next }
-            in_table {
-              if (/^\|/) { 
-                # 提取镜像名称和标签信息
-                match($0, /\| *([^|]+) *\| *[^|]+ *\| *([^|]+) *\|/);
-                if (RSTART) { 
-                  name=$2; gsub(/^[ \t]*|[ \t]*$/, "", name);
-                  tags=$4; gsub(/^[ \t]*|[ \t]*$/, "", tags);
-                  print name ":::" tags;
-                }
-              }
-              if (!/^\|/ && !/^$/) { in_table=0 }
-            }
-          ' README.md)
-
-          IFS=',' read -r -a image_array <<< "${{ inputs.images }}"
-
-          for i in "${!image_array[@]}"; do
-            full_image=$(echo "${image_array[$i]}" | xargs)
-            if [ -z "$full_image" ]; then continue; fi
-
-            # 检查镜像和标签是否已存在
-            current_image=$(echo "$full_image" | cut -d':' -f1)
-            current_tag=$(echo "$full_image" | cut -s -d':' -f2); [ -z "$current_tag" ] && current_tag="latest"
-            IMAGE_NAME=$(basename "$current_image")
+          
+          # 解析输入的镜像信息
+          IMAGES_INFO="${{ github.event.inputs.images }}"
+          
+          # 遍历每个镜像信息
+          echo "$IMAGES_INFO" | jq -c '.[]' | while read -r IMAGE_INFO; do
+            # 提取镜像信息
+            SOURCE_IMAGE=$(echo "$IMAGE_INFO" | jq -r '.source_image')
+            SOURCE_TAG=$(echo "$IMAGE_INFO" | jq -r '.source_tag')
+            IMAGE_NAME=$(echo "$IMAGE_INFO" | jq -r '.name')
             
-            # 检查镜像是否存在，以及标签是否已包含
-            image_exists=false
-            existing_tags=""
+            # 构建源镜像URI
+            SOURCE_IMAGE_URI="docker://${SOURCE_IMAGE}:${SOURCE_TAG}"
+            # 构建本地镜像URI
+            LOCAL_IMAGE_URI="docker-daemon:${SOURCE_IMAGE}:${SOURCE_TAG}"
+            # 构建GHCR目标镜像URI
+            GHCR_IMAGE_URI="docker://ghcr.io/seatonjiang/${SOURCE_IMAGE}:${SOURCE_TAG}"
+            # 构建CNB目标镜像URI
+            CNB_IMAGE_URI="docker://docker.cnb.cool/seatonjiang/monolith/${SOURCE_IMAGE}:${SOURCE_TAG}"
             
-            while IFS= read -r line; do
-              if [ -z "$line" ]; then continue; fi
-              
-              # 使用 awk 替代 cut 来处理多字符分隔符
-              img_name=$(echo "$line" | awk -F":::" '{print $1}')
-              img_tags=$(echo "$line" | awk -F":::" '{print $2}')
-              
-              # 如果 img_name 包含冒号，只取第一部分
-              if [[ "$img_name" == *":"* ]]; then
-                img_name=$(echo "$img_name" | cut -d':' -f1)
-              fi
-              
-              if [ "$img_name" = "$IMAGE_NAME" ]; then
-                image_exists=true
-                existing_tags="$img_tags"
-                break
-              fi
-            done <<< "$existing_image_info"
+            echo "处理镜像: $IMAGE_NAME ($SOURCE_IMAGE:$SOURCE_TAG)"
             
-            # 检查当前标签是否已存在于标签列表中
-            if [ "$image_exists" = true ] && [[ "$existing_tags" == *"$current_tag"* ]]; then
-              echo "镜像 $IMAGE_NAME 的标签 $current_tag 已存在于 README.md，跳过。"
-              continue
-            fi
+            # 检查镜像是否已存在于README.md中
+            README_CONTAINS_IMAGE=$(grep -c "$IMAGE_NAME.*$SOURCE_IMAGE" README.md || true)
+            README_CONTAINS_TAG=$(grep -c "$IMAGE_NAME.*$SOURCE_TAG" README.md || true)
+            README_ZH_CONTAINS_IMAGE=$(grep -c "$IMAGE_NAME.*$SOURCE_IMAGE" README.zh-Hans.md || true)
+            README_ZH_CONTAINS_TAG=$(grep -c "$IMAGE_NAME.*$SOURCE_TAG" README.zh-Hans.md || true)
             
-            echo "--------------------------------------------------"
-            echo "===== 开始处理 $full_image ====="
-            target_tag="$current_tag"; [[ "$current_tag" =~ "alpine" ]] && target_tag="alpine"
+            # 同步镜像的标志
+            SYNC_REQUIRED=false
+            UPDATE_TAG_ONLY=false
             
-            if [ "$current_tag" == "latest" ] || [ "$target_tag" == "alpine" ]; then 
-              sync_status="✔️"
-            else 
-              sync_status="❌"
-            fi
-
-            SOURCE_IMAGE_URI="docker://$current_image:$current_tag"
-            GHCR_IMAGE_URI="docker://ghcr.io/seatonjiang/$IMAGE_NAME:$target_tag"
-            CNB_IMAGE_URI="docker://docker.cnb.cool/seatonjiang/monolith/$IMAGE_NAME:$target_tag"
-            
-            # --- 这是补充的完整同步逻辑 ---
-            echo "源镜像: $SOURCE_IMAGE_URI"
-            echo "GHCR目标镜像: $GHCR_IMAGE_URI"
-            echo "CNB目标镜像: $CNB_IMAGE_URI"
-            
-            # 先同步到本地临时目录
-            LOCAL_IMAGE_URI="dir:/tmp/docker-sync/$IMAGE_NAME:$target_tag"
-            echo "同步到本地: $LOCAL_IMAGE_URI"
-            
-            # 创建临时目录
-            mkdir -p /tmp/docker-sync
-            
-            # 使用 skopeo copy 进行同步到本地，--all 参数会自动处理多架构
-            if skopeo copy --all "$SOURCE_IMAGE_URI" "$LOCAL_IMAGE_URI"; then
-              echo "✅ 镜像同步到本地成功"
-              
-              # 从本地同步到 GHCR
-              if skopeo copy --all "$LOCAL_IMAGE_URI" "$GHCR_IMAGE_URI"; then
-                echo "✅ 镜像同步到 GHCR 成功"
-              else
-                echo "❌ 镜像同步到 GHCR 失败"
-              fi
-              
-              # 从本地同步到 CNB
-              if skopeo copy --all "$LOCAL_IMAGE_URI" "$CNB_IMAGE_URI"; then
-                echo "✅ 镜像同步到 CNB 成功"
-              else
-                echo "❌ 镜像同步到 CNB 失败"
-              fi
-              
-              # 清理临时目录
-              rm -rf "/tmp/docker-sync/$IMAGE_NAME:$target_tag"
+            # 判断是否需要同步
+            if [ "$README_CONTAINS_IMAGE" -eq 0 ] && [ "$README_ZH_CONTAINS_IMAGE" -eq 0 ]; then
+              echo "镜像 $IMAGE_NAME 不存在于README中，需要同步并添加新条目"
+              SYNC_REQUIRED=true
+            elif [ "$README_CONTAINS_TAG" -eq 0 ] || [ "$README_ZH_CONTAINS_TAG" -eq 0 ]; then
+              echo "镜像 $IMAGE_NAME 存在，但标签 $SOURCE_TAG 不存在，需要同步并更新标签"
+              SYNC_REQUIRED=true
+              UPDATE_TAG_ONLY=true
             else
-              echo "❌ 镜像同步到本地失败"
+              echo "$IMAGE_NAME:$SOURCE_TAG 已存在，跳过同步！"
               continue
             fi
-
-
-            # --- 同步逻辑结束 ---
-
-            # 准备新行的数据
-            registry="ghcr.io/seatonjiang/$IMAGE_NAME"
-            if [ "$target_tag" != "latest" ]; then
-              registry="$registry:$target_tag"
-            fi
-            registry="\`$registry\`"
             
-            # 获取当前日期作为同步日期（使用北京时间）
-            sync_date=$(TZ='Asia/Shanghai' date +"%Y-%m-%d")
-            
-            # 处理标签列表
-            if [ "$image_exists" = true ]; then
-              # 如果镜像已存在，将新标签添加到现有标签列表
-              if [ -z "$existing_tags" ]; then
-                tags="$current_tag"
-              else
-                # 检查标签是否已存在
-                if [[ "$existing_tags" != *"$current_tag"* ]]; then
-                  tags="$existing_tags,$current_tag"
+            # 如果需要同步，则执行同步操作
+            if [ "$SYNC_REQUIRED" = true ]; then
+              echo "开始同步镜像: $SOURCE_IMAGE_URI"
+              
+              # 使用skopeo从源镜像同步到本地
+              if skopeo copy --all "$SOURCE_IMAGE_URI" "$LOCAL_IMAGE_URI"; then
+                echo "成功将镜像同步到本地"
+                
+                # 推送到GHCR
+                if skopeo copy --all "$LOCAL_IMAGE_URI" "$GHCR_IMAGE_URI"; then
+                  echo "成功将镜像推送到GHCR"
                 else
-                  tags="$existing_tags"
+                  echo "推送到GHCR失败"
+                  exit 1
                 fi
+                
+                # 推送到CNB
+                if skopeo copy --all "$LOCAL_IMAGE_URI" "$CNB_IMAGE_URI"; then
+                  echo "成功将镜像推送到CNB"
+                else
+                  echo "推送到CNB失败"
+                  exit 1
+                fi
+                
+                # 获取当前日期
+                SYNC_DATE=$(date +"%Y-%m-%d")
+                
+                # 更新README.md和README.zh-Hans.md
+                if [ "$UPDATE_TAG_ONLY" = true ]; then
+                  # 仅更新标签
+                  # 提取现有标签
+                  EXISTING_TAGS_EN=$(grep -A 1 "$IMAGE_NAME.*\`ghcr.io/seatonjiang/$SOURCE_IMAGE\`" README.md | tail -n 1 | sed -E 's/.*\| (.*) \|.*/\1/')
+                  EXISTING_TAGS_ZH=$(grep -A 1 "$IMAGE_NAME.*\`docker.cnb.cool/seatonjiang/monolith/$SOURCE_IMAGE\`" README.zh-Hans.md | tail -n 1 | sed -E 's/.*\| (.*) \|.*/\1/')
+                  
+                  # 添加新标签
+                  NEW_TAGS_EN="$EXISTING_TAGS_EN, $SOURCE_TAG"
+                  NEW_TAGS_ZH="$EXISTING_TAGS_ZH, $SOURCE_TAG"
+                  
+                  # 更新README.md
+                  sed -i "/^| $IMAGE_NAME.*\`ghcr.io\/seatonjiang\/$SOURCE_IMAGE\`/ { n; s/| .* |/| $NEW_TAGS_EN |/ }" README.md
+                  # 更新README.zh-Hans.md
+                  sed -i "/^| $IMAGE_NAME.*\`docker.cnb.cool\/seatonjiang\/monolith\/$SOURCE_IMAGE\`/ { n; s/| .* |/| $NEW_TAGS_ZH |/ }" README.zh-Hans.md
+                  
+                  echo "已更新 $IMAGE_NAME 的标签列表"
+                else
+                  # 添加新条目
+                  # 在README.md中添加新行
+                  sed -i "/^| Name | Registry | Tags | Sync Date |/a\| $IMAGE_NAME | \`ghcr.io/seatonjiang/$SOURCE_IMAGE\` | $SOURCE_TAG | $SYNC_DATE |" README.md
+                  # 在README.zh-Hans.md中添加新行
+                  sed -i "/^| 镜像名称 | 镜像链接 | 标签 | 同步时间 |/a\| $IMAGE_NAME | \`docker.cnb.cool/seatonjiang/monolith/$SOURCE_IMAGE\` | $SOURCE_TAG | $SYNC_DATE |" README.zh-Hans.md
+                  
+                  echo "已添加 $IMAGE_NAME 的新条目"
+                fi
+                
+                # 提交更改
+                git add README.md README.zh-Hans.md
+                git commit -m "docs: 更新同步镜像信息 - $IMAGE_NAME:$SOURCE_TAG"
+                git push
+                
+                echo "镜像 $IMAGE_NAME:$SOURCE_TAG 同步完成"
+              else
+                echo "同步到本地失败"
+                exit 1
               fi
-            else
-              # 如果是新镜像，标签就是当前标签
-              tags="$current_tag"
             fi
-            
-            # 准备新行数据，添加标签列
-            new_line_data="${IMAGE_NAME}${UNIQUE_SEPARATOR}${registry}${UNIQUE_SEPARATOR}${tags}${UNIQUE_SEPARATOR}${sync_date}"
-            NEW_ROWS_DATA+="${new_line_data}\n"
           done
 
-          if [ -z "$NEW_ROWS_DATA" ]; then
-            echo "--------------------------------------------------"
-            echo "没有新的镜像被添加，无需更新 README.md。"
-            exit 0
-          fi
-
-          # --- 2. README 更新、排序与重写 ---
-          echo "--------------------------------------------------"
-          echo "开始更新 README.md..."
-
-          existing_rows=$(awk '
-            $0 == "'"${TABLE_TITLE}"'" { in_table=1; next }
-            in_table {
-              if (/^\|/ && !/^\| :/ && !/^\| Name \| Registry \| Tags \| Sync Date \|/) { print }
-              if (!/^\|/ && !/^$/) { in_table=0 }
-            }
-          ' README.md)
-
-          # 处理新行数据，合并相同镜像的标签
-          processed_new_rows=""
-          while IFS= read -r line; do
-            if [ -z "$line" ]; then continue; fi
-            
-            # 解析新行数据
-            img_name=$(echo "$line" | awk -F"${UNIQUE_SEPARATOR}" '{print $1}')
-            img_registry=$(echo "$line" | awk -F"${UNIQUE_SEPARATOR}" '{print $2}')
-            img_tags=$(echo "$line" | awk -F"${UNIQUE_SEPARATOR}" '{print $3}')
-            img_date=$(echo "$line" | awk -F"${UNIQUE_SEPARATOR}" '{print $4}')
-            
-            # 检查是否已存在于现有行中
-            found=false
-            updated_existing_rows=""
-            
-            while IFS= read -r existing_line; do
-              if [ -z "$existing_line" ]; then continue; fi
-              
-              # 提取现有行的镜像名称
-              existing_name=$(echo "$existing_line" | awk -F'|' '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-              
-              if [ "$existing_name" = "$img_name" ]; then
-                # 找到匹配的行，更新标签
-                existing_registry=$(echo "$existing_line" | awk -F'|' '{print $3}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-                existing_tags=$(echo "$existing_line" | awk -F'|' '{print $4}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-                existing_date=$(echo "$existing_line" | awk -F'|' '{print $5}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-                
-                # 合并标签，避免重复
-                merged_tags="$existing_tags"
-                for tag in $(echo "$img_tags" | tr ',' ' '); do
-                  if [[ "$merged_tags" != *"$tag"* ]]; then
-                    if [ -z "$merged_tags" ]; then
-                      merged_tags="$tag"
-                    else
-                      merged_tags="$merged_tags,$tag"
-                    fi
-                  fi
-                done
-                
-                # 更新行
-                updated_line="| $existing_name | $existing_registry | $merged_tags | $img_date |"
-                updated_existing_rows="$updated_existing_rows$updated_line\n"
-                found=true
-              else
-                # 保留原行
-                updated_existing_rows="$updated_existing_rows$existing_line\n"
-              fi
-            done <<< "$existing_rows"
-            
-            if [ "$found" = true ]; then
-              # 已更新现有行
-              existing_rows="$updated_existing_rows"
-            else
-              # 添加为新行
-              processed_new_rows="$processed_new_rows$line\n"
-            fi
-          done <<< "$NEW_ROWS_DATA"
-          
-          # 格式化处理后的新行
-          formatted_new_rows=""
-          if [ -n "$processed_new_rows" ]; then
-            formatted_new_rows=$(echo -e "$processed_new_rows" | sed '/^$/d' | awk -F"${UNIQUE_SEPARATOR}" '{printf("| %s | %s | %s | %s |\n", $1, $2, $3, $4)}')
-          fi
-          
-          # 合并并排序所有行
-          sorted_table_rows=$(
-            {
-              echo "$existing_rows" 
-              echo -e "$formatted_new_rows"
-            } | grep -v '^$' | awk -F'|' '
-              {
-                key = $2;
-                gsub(/^[[:space:]]+|[[:space:]]+$/, "", key);
-                print key "@@@" $0;
-              }
-            ' | sort -f | sed 's/^.*@@@//'
-          )
-
-          {
-            echo "${TABLE_TITLE}"
-            echo ""
-            echo "| Name | Registry | Tags | Sync Date |"
-            echo "| :--- | :--- | :--- | :--- |"
-            echo "$sorted_table_rows"
-          } > new_table.tmp
-
-          awk '
-            BEGIN { replaced=0 }
-            $0 == "'"${TABLE_TITLE}"'" && !replaced {
-              while ((getline line < "new_table.tmp") > 0) { print line }
-              close("new_table.tmp");
-              replaced=1;
-              skipping=1;
-              next;
-            }
-            skipping {
-              if (!/^\|/ && !/^$/) { skipping=0 } else { next }
-            }
-            { print }
-          ' README.md > README.tmp && mv README.tmp README.md
-
-          # 更新中文版 README
-          echo "--------------------------------------------------"
-          echo "开始更新 README.zh-Hans.md..."
-          
-          # 复制英文版表格到中文版
-          awk '
-            BEGIN { replaced=0; title_printed=0 }
-            $0 == "### 同步的镜像" && !replaced {
-              print "### 同步的镜像";
-              print "";
-              print "| 镜像名称 | 镜像链接 | 标签 | 同步时间 |";
-              print "| :--- | :--- | :--- | :--- |";
-              title_printed=1;
-              
-              while ((getline line < "new_table.tmp") > 0) {
-                # 跳过英文版的标题和表头行
-                if (line == "### Synced Images" || line == "| Name | Registry | Tags | Sync Date |" || 
-                    line == "| :--- | :--- | :--- | :--- |" || line == "") {
-                  continue;
-                } else {
-                  print line;
-                }
-              }
-              close("new_table.tmp");
-              replaced=1;
-              skipping=1;
-              next;
-            }
-            skipping {
-              if (!/^\|/ && !/^$/) { skipping=0 } else { next }
-            }
-            { print }
-          ' README.zh-Hans.md > README.zh-Hans.tmp && mv README.zh-Hans.tmp README.zh-Hans.md
-          
-          # 提交更改
-          git add README.md README.zh-Hans.md
-          if git diff --staged --quiet; then
-            echo "没有新的镜像或文件变更可提交。"
-          else
-            git commit -m "chore(sync): 同步新镜像并更新README"
-            git push
-          fi
-          
-          # 清理临时文件
-          rm -f new_table.tmp
