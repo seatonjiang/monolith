@@ -230,6 +230,7 @@ rename-command FLUSHDB  ""    # Disable command to clear current database
 | Name | Registry | Tags | Sync Date |
 | :--- | :--- | :--- | :--- |
 | mariadb | `ghcr.io/seatonjiang/mariadb:11.8` | 11.8 | 2025-09-17 |
+| mariadb | `ghcr.io/seatonjiang/mariadb:12.0` | `ghcr.io/seatonjiang/mariadb:11.8`,12.0 | 2025-09-17 |
 | Name | Registry | Tags |Sync Date |
 ## 📚 Common Questions
 
