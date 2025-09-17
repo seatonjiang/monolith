@@ -48,23 +48,162 @@ jobs:
           # 解析输入的镜像信息
           IMAGES_INFO="${{ github.event.inputs.images }}"
           
-          # 遍历每个镜像信息
-          echo "$IMAGES_INFO" | jq -c '.[]' | while read -r IMAGE_INFO; do
-            # 提取镜像信息
-            SOURCE_IMAGE=$(echo "$IMAGE_INFO" | jq -r '.source_image')
-            SOURCE_TAG=$(echo "$IMAGE_INFO" | jq -r '.source_tag')
-            IMAGE_NAME=$(echo "$IMAGE_INFO" | jq -r '.name')
+          # 检查输入是否为简单的 image:tag 格式
+          if [[ "$IMAGES_INFO" == *":"* ]] && ! [[ "$IMAGES_INFO" == *"{"* ]]; then
+            echo "检测到简单格式：$IMAGES_INFO"
+            # 简单格式处理
+            IFS=':' read -r SOURCE_IMAGE SOURCE_TAG <<< "$IMAGES_INFO"
+            IMAGE_NAME="$SOURCE_IMAGE"
             
-            # 构建源镜像URI
-            SOURCE_IMAGE_URI="docker://${SOURCE_IMAGE}:${SOURCE_TAG}"
-            # 构建本地镜像URI
-            LOCAL_IMAGE_URI="docker-daemon:${SOURCE_IMAGE}:${SOURCE_TAG}"
-            # 构建GHCR目标镜像URI
-            GHCR_IMAGE_URI="docker://ghcr.io/seatonjiang/${SOURCE_IMAGE}:${SOURCE_TAG}"
-            # 构建CNB目标镜像URI
-            CNB_IMAGE_URI="docker://docker.cnb.cool/seatonjiang/monolith/${SOURCE_IMAGE}:${SOURCE_TAG}"
+            # 处理单个镜像
+            process_image() {
+              local SOURCE_IMAGE=$1
+              local SOURCE_TAG=$2
+              local IMAGE_NAME=$3
+              
+              # 构建源镜像URI
+              local SOURCE_IMAGE_URI="docker://${SOURCE_IMAGE}:${SOURCE_TAG}"
+              # 构建本地镜像URI
+              local LOCAL_IMAGE_URI="docker-daemon:${SOURCE_IMAGE}:${SOURCE_TAG}"
+              # 构建GHCR目标镜像URI
+              local GHCR_IMAGE_URI="docker://ghcr.io/seatonjiang/${SOURCE_IMAGE}:${SOURCE_TAG}"
+              # 构建CNB目标镜像URI
+              local CNB_IMAGE_URI="docker://docker.cnb.cool/seatonjiang/monolith/${SOURCE_IMAGE}:${SOURCE_TAG}"
+              
+              echo "处理镜像: $IMAGE_NAME ($SOURCE_IMAGE:$SOURCE_TAG)"
+              
+              # 检查镜像是否已存在于README.md中
+              local README_CONTAINS_IMAGE=$(grep -c "$IMAGE_NAME.*$SOURCE_IMAGE" README.md || true)
+              local README_CONTAINS_TAG=$(grep -c "$IMAGE_NAME.*$SOURCE_TAG" README.md || true)
+              local README_ZH_CONTAINS_IMAGE=$(grep -c "$IMAGE_NAME.*$SOURCE_IMAGE" README.zh-Hans.md || true)
+              local README_ZH_CONTAINS_TAG=$(grep -c "$IMAGE_NAME.*$SOURCE_TAG" README.zh-Hans.md || true)
+              
+              # 同步镜像的标志
+              local SYNC_REQUIRED=false
+              local UPDATE_TAG_ONLY=false
+              
+              # 判断是否需要同步
+              if [ "$README_CONTAINS_IMAGE" -eq 0 ] && [ "$README_ZH_CONTAINS_IMAGE" -eq 0 ]; then
+                echo "镜像 $IMAGE_NAME 不存在于README中，需要同步并添加新条目"
+                SYNC_REQUIRED=true
+              elif [ "$README_CONTAINS_TAG" -eq 0 ] || [ "$README_ZH_CONTAINS_TAG" -eq 0 ]; then
+                echo "镜像 $IMAGE_NAME 存在，但标签 $SOURCE_TAG 不存在，需要同步并更新标签"
+                SYNC_REQUIRED=true
+                UPDATE_TAG_ONLY=true
+              else
+                echo "$IMAGE_NAME:$SOURCE_TAG 已存在，跳过同步！"
+                return 0
+              fi
+              
+              # 如果需要同步，则执行同步操作
+              if [ "$SYNC_REQUIRED" = true ]; then
+                echo "开始同步镜像: $SOURCE_IMAGE_URI"
+                
+                # 使用skopeo从源镜像同步到本地
+                if skopeo copy --all "$SOURCE_IMAGE_URI" "$LOCAL_IMAGE_URI"; then
+                  echo "成功将镜像同步到本地"
+                  
+                  # 推送到GHCR
+                  if skopeo copy --all "$LOCAL_IMAGE_URI" "$GHCR_IMAGE_URI"; then
+                    echo "成功将镜像推送到GHCR"
+                  else
+                    echo "推送到GHCR失败"
+                    return 1
+                  fi
+                  
+                  # 推送到CNB
+                  if skopeo copy --all "$LOCAL_IMAGE_URI" "$CNB_IMAGE_URI"; then
+                    echo "成功将镜像推送到CNB"
+                  else
+                    echo "推送到CNB失败"
+                    return 1
+                  fi
+                  
+                  # 获取当前日期
+                  local SYNC_DATE=$(date +"%Y-%m-%d")
+                  
+                  # 更新README.md和README.zh-Hans.md
+                  if [ "$UPDATE_TAG_ONLY" = true ]; then
+                    # 仅更新标签
+                    # 提取现有标签
+                    local EXISTING_TAGS_EN=$(grep -A 1 "$IMAGE_NAME.*\`ghcr.io/seatonjiang/$SOURCE_IMAGE\`" README.md | tail -n 1 | sed -E 's/.*\| (.*) \|.*/\1/')
+                    local EXISTING_TAGS_ZH=$(grep -A 1 "$IMAGE_NAME.*\`docker.cnb.cool/seatonjiang/monolith/$SOURCE_IMAGE\`" README.zh-Hans.md | tail -n 1 | sed -E 's/.*\| (.*) \|.*/\1/')
+                    
+                    # 添加新标签
+                    local NEW_TAGS_EN="$EXISTING_TAGS_EN, $SOURCE_TAG"
+                    local NEW_TAGS_ZH="$EXISTING_TAGS_ZH, $SOURCE_TAG"
+                    
+                    # 更新README.md
+                    sed -i "/^| $IMAGE_NAME.*\`ghcr.io\/seatonjiang\/$SOURCE_IMAGE\`/ { n; s/| .* |/| $NEW_TAGS_EN |/ }" README.md
+                    # 更新README.zh-Hans.md
+                    sed -i "/^| $IMAGE_NAME.*\`docker.cnb.cool\/seatonjiang\/monolith\/$SOURCE_IMAGE\`/ { n; s/| .* |/| $NEW_TAGS_ZH |/ }" README.zh-Hans.md
+                    
+                    echo "已更新 $IMAGE_NAME 的标签列表"
+                  else
+                    # 添加新条目
+                    # 在README.md中添加新行
+                    sed -i "/^| Name | Registry | Tags | Sync Date |/a\| $IMAGE_NAME | \`ghcr.io/seatonjiang/$SOURCE_IMAGE\` | $SOURCE_TAG | $SYNC_DATE |" README.md
+                    # 在README.zh-Hans.md中添加新行
+                    sed -i "/^| 镜像名称 | 镜像链接 | 标签 | 同步时间 |/a\| $IMAGE_NAME | \`docker.cnb.cool/seatonjiang/monolith/$SOURCE_IMAGE\` | $SOURCE_TAG | $SYNC_DATE |" README.zh-Hans.md
+                    
+                    echo "已添加 $IMAGE_NAME 的新条目"
+                  fi
+                  
+                  # 提交更改
+                  git add README.md README.zh-Hans.md
+                  git commit -m "docs: 更新同步镜像信息 - $IMAGE_NAME:$SOURCE_TAG"
+                  git push
+                  
+                  echo "镜像 $IMAGE_NAME:$SOURCE_TAG 同步完成"
+                  return 0
+                else
+                  echo "同步到本地失败"
+                  return 1
+                fi
+              fi
+            }
             
-            echo "处理镜像: $IMAGE_NAME ($SOURCE_IMAGE:$SOURCE_TAG)"
+            # 处理简单格式的镜像
+            process_image "$SOURCE_IMAGE" "$SOURCE_TAG" "$IMAGE_NAME"
+            if [ $? -ne 0 ]; then
+              exit 1
+            fi
+          else
+            # 确保输入是有效的JSON格式
+            if ! echo "$IMAGES_INFO" | jq . > /dev/null 2>&1; then
+              echo "错误：输入的镜像信息不是有效的JSON格式"
+              exit 1
+            fi
+            
+            # 检查JSON是否为数组格式
+            IS_ARRAY=$(echo "$IMAGES_INFO" | jq 'if type=="array" then true else false end')
+            
+            if [ "$IS_ARRAY" = "true" ]; then
+              # 如果是数组，遍历每个元素
+              echo "$IMAGES_INFO" | jq -c '.[]' | while read -r IMAGE_INFO; do
+                # 提取镜像信息
+                SOURCE_IMAGE=$(echo "$IMAGE_INFO" | jq -r '.source_image')
+                SOURCE_TAG=$(echo "$IMAGE_INFO" | jq -r '.source_tag')
+                IMAGE_NAME=$(echo "$IMAGE_INFO" | jq -r '.name')
+                
+                # 处理镜像
+                process_image "$SOURCE_IMAGE" "$SOURCE_TAG" "$IMAGE_NAME"
+                if [ $? -ne 0 ]; then
+                  exit 1
+                fi
+              done
+            else
+              # 如果是单个对象，直接处理
+              SOURCE_IMAGE=$(echo "$IMAGES_INFO" | jq -r '.source_image')
+              SOURCE_TAG=$(echo "$IMAGES_INFO" | jq -r '.source_tag')
+              IMAGE_NAME=$(echo "$IMAGES_INFO" | jq -r '.name')
+              
+              # 处理镜像
+              process_image "$SOURCE_IMAGE" "$SOURCE_TAG" "$IMAGE_NAME"
+              if [ $? -ne 0 ]; then
+                exit 1
+              fi
+            fi
             
             # 检查镜像是否已存在于README.md中
             README_CONTAINS_IMAGE=$(grep -c "$IMAGE_NAME.*$SOURCE_IMAGE" README.md || true)
@@ -155,4 +294,109 @@ jobs:
               fi
             fi
           done
+          else
+            # 如果不是数组，直接处理单个镜像
+            # 解析输入格式 image:tag
+            IFS=':' read -r SOURCE_IMAGE SOURCE_TAG <<< "$IMAGES_INFO"
+            IMAGE_NAME="$SOURCE_IMAGE"
+            
+            # 构建源镜像URI
+            SOURCE_IMAGE_URI="docker://${SOURCE_IMAGE}:${SOURCE_TAG}"
+            # 构建本地镜像URI
+            LOCAL_IMAGE_URI="docker-daemon:${SOURCE_IMAGE}:${SOURCE_TAG}"
+            # 构建GHCR目标镜像URI
+            GHCR_IMAGE_URI="docker://ghcr.io/seatonjiang/${SOURCE_IMAGE}:${SOURCE_TAG}"
+            # 构建CNB目标镜像URI
+            CNB_IMAGE_URI="docker://docker.cnb.cool/seatonjiang/monolith/${SOURCE_IMAGE}:${SOURCE_TAG}"
+            
+            echo "处理镜像: $IMAGE_NAME ($SOURCE_IMAGE:$SOURCE_TAG)"
+            
+            # 检查镜像是否已存在于README.md中
+            README_CONTAINS_IMAGE=$(grep -c "$IMAGE_NAME.*$SOURCE_IMAGE" README.md || true)
+            README_CONTAINS_TAG=$(grep -c "$IMAGE_NAME.*$SOURCE_TAG" README.md || true)
+            README_ZH_CONTAINS_IMAGE=$(grep -c "$IMAGE_NAME.*$SOURCE_IMAGE" README.zh-Hans.md || true)
+            README_ZH_CONTAINS_TAG=$(grep -c "$IMAGE_NAME.*$SOURCE_TAG" README.zh-Hans.md || true)
+            
+            # 同步镜像的标志
+            SYNC_REQUIRED=false
+            UPDATE_TAG_ONLY=false
+            
+            # 判断是否需要同步
+            if [ "$README_CONTAINS_IMAGE" -eq 0 ] && [ "$README_ZH_CONTAINS_IMAGE" -eq 0 ]; then
+              echo "镜像 $IMAGE_NAME 不存在于README中，需要同步并添加新条目"
+              SYNC_REQUIRED=true
+            elif [ "$README_CONTAINS_TAG" -eq 0 ] || [ "$README_ZH_CONTAINS_TAG" -eq 0 ]; then
+              echo "镜像 $IMAGE_NAME 存在，但标签 $SOURCE_TAG 不存在，需要同步并更新标签"
+              SYNC_REQUIRED=true
+              UPDATE_TAG_ONLY=true
+            else
+              echo "$IMAGE_NAME:$SOURCE_TAG 已存在，跳过同步！"
+            fi
+            
+            # 如果需要同步，则执行同步操作
+            if [ "$SYNC_REQUIRED" = true ]; then
+              echo "开始同步镜像: $SOURCE_IMAGE_URI"
+              
+              # 使用skopeo从源镜像同步到本地
+              if skopeo copy --all "$SOURCE_IMAGE_URI" "$LOCAL_IMAGE_URI"; then
+                echo "成功将镜像同步到本地"
+                
+                # 推送到GHCR
+                if skopeo copy --all "$LOCAL_IMAGE_URI" "$GHCR_IMAGE_URI"; then
+                  echo "成功将镜像推送到GHCR"
+                else
+                  echo "推送到GHCR失败"
+                  exit 1
+                fi
+                
+                # 推送到CNB
+                if skopeo copy --all "$LOCAL_IMAGE_URI" "$CNB_IMAGE_URI"; then
+                  echo "成功将镜像推送到CNB"
+                else
+                  echo "推送到CNB失败"
+                  exit 1
+                fi
+                
+                # 获取当前日期
+                SYNC_DATE=$(date +"%Y-%m-%d")
+                
+                # 更新README.md和README.zh-Hans.md
+                if [ "$UPDATE_TAG_ONLY" = true ]; then
+                  # 仅更新标签
+                  # 提取现有标签
+                  EXISTING_TAGS_EN=$(grep -A 1 "$IMAGE_NAME.*\`ghcr.io/seatonjiang/$SOURCE_IMAGE\`" README.md | tail -n 1 | sed -E 's/.*\| (.*) \|.*/\1/')
+                  EXISTING_TAGS_ZH=$(grep -A 1 "$IMAGE_NAME.*\`docker.cnb.cool/seatonjiang/monolith/$SOURCE_IMAGE\`" README.zh-Hans.md | tail -n 1 | sed -E 's/.*\| (.*) \|.*/\1/')
+                  
+                  # 添加新标签
+                  NEW_TAGS_EN="$EXISTING_TAGS_EN, $SOURCE_TAG"
+                  NEW_TAGS_ZH="$EXISTING_TAGS_ZH, $SOURCE_TAG"
+                  
+                  # 更新README.md
+                  sed -i "/^| $IMAGE_NAME.*\`ghcr.io\/seatonjiang\/$SOURCE_IMAGE\`/ { n; s/| .* |/| $NEW_TAGS_EN |/ }" README.md
+                  # 更新README.zh-Hans.md
+                  sed -i "/^| $IMAGE_NAME.*\`docker.cnb.cool\/seatonjiang\/monolith\/$SOURCE_IMAGE\`/ { n; s/| .* |/| $NEW_TAGS_ZH |/ }" README.zh-Hans.md
+                  
+                  echo "已更新 $IMAGE_NAME 的标签列表"
+                else
+                  # 添加新条目
+                  # 在README.md中添加新行
+                  sed -i "/^| Name | Registry | Tags | Sync Date |/a\| $IMAGE_NAME | \`ghcr.io/seatonjiang/$SOURCE_IMAGE\` | $SOURCE_TAG | $SYNC_DATE |" README.md
+                  # 在README.zh-Hans.md中添加新行
+                  sed -i "/^| 镜像名称 | 镜像链接 | 标签 | 同步时间 |/a\| $IMAGE_NAME | \`docker.cnb.cool/seatonjiang/monolith/$SOURCE_IMAGE\` | $SOURCE_TAG | $SYNC_DATE |" README.zh-Hans.md
+                  
+                  echo "已添加 $IMAGE_NAME 的新条目"
+                fi
+                
+                # 提交更改
+                git add README.md README.zh-Hans.md
+                git commit -m "docs: 更新同步镜像信息 - $IMAGE_NAME:$SOURCE_TAG"
+                git push
+                
+                echo "镜像 $IMAGE_NAME:$SOURCE_TAG 同步完成"
+              else
+                echo "同步到本地失败"
+                exit 1
+              fi
+            fi
+          fi
 
