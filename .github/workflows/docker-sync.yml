@@ -1,4 +1,4 @@
-name: Sync Docker Images
+name: Sync Docker Image
 
 permissions:
   packages: write
