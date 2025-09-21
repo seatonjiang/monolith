@@ -273,7 +273,7 @@ jobs:
           # 格式化处理后的新行
           formatted_new_rows=""
           if [ -n "$processed_new_rows" ]; then
-            formatted_new_rows=$(echo -e "$processed_new_rows" | sed '/^$/d' | awk -F"${UNIQUE_SEPARATOR}" '{printf("| %s | %s | %s | %s |", $1, $2, $3, $4)}')
+            formatted_new_rows=$(echo -e "$processed_new_rows" | sed '/^$/d' | awk -F"${UNIQUE_SEPARATOR}" '{printf("| %s | %s | %s | %s |\n", $1, $2, $3, $4)}')
           fi
           
           # 合并并排序所有行
