@@ -231,8 +231,7 @@ rename-command FLUSHDB  ""    # 禁用清空当前数据库的命令
 
 | 镜像名称 | 镜像链接 | 标签 | 同步时间 |
 | :--- | :--- | :--- | :--- |
-| hello-world | `ghcr.io/seatonjiang/hello-world` | latest | 2025-09-21 |
-
+| hello-world | `ghcr.io/seatonjiang/hello-world` | latest,`ghcr.io/seatonjiang/hello-world`,nanoserver | 2025-09-21\n |\n
 ## 📚 常见问题
 
 <details>
