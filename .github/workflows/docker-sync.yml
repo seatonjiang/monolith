@@ -336,6 +336,9 @@ jobs:
           echo "--------------------------------------------------"
           echo "开始更新 README.zh-Hans.md..."
           
+          # 确保临时文件干净
+          rm -f new_table.tmp
+          
           # 复制英文版表格到中文版
           awk '
             BEGIN { replaced=0; title_printed=0 }
@@ -346,14 +349,15 @@ jobs:
               print "| :--- | :--- | :--- | :--- |";
               title_printed=1;
               
-              while ((getline line < "new_table.tmp") > 0) {
-                # 跳过英文版的标题和表头行
-                if (line == "### Synced Images" || line == "| Name | Registry | Tags | Sync Date |" || 
-                    line == "| :--- | :--- | :--- | :--- |" || line == "") {
-                  continue;
-                } else {
-                  print line;
-                }
+              # 创建中文版表格内容
+              echo "$sorted_table_rows" > zh_table.tmp
+              
+              # 读取中文版表格内容
+              while ((getline line < "zh_table.tmp") > 0) {
+                print line;
+              }
+              close("zh_table.tmp");
+              rm -f zh_table.tmp
               }
               close("new_table.tmp");
               replaced=1;
@@ -361,7 +365,15 @@ jobs:
               next;
             }
             skipping {
-              if (!/^\|/ && !/^$/) { skipping=0 } else { next }
+              if (!/^\|/ && !/^$/) { 
+                print "";  # 在表格结束后添加空行
+                skipping=0 
+              } else if (/^$/) {
+                print "";  # 如果是空行，保留它
+                skipping=0
+              } else { 
+                next 
+              }
             }
             { print }
           ' README.zh-Hans.md > README.zh-Hans.tmp && mv README.zh-Hans.tmp README.zh-Hans.md
