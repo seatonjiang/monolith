@@ -166,21 +166,33 @@ jobs:
             sync_date=$(TZ='Asia/Shanghai' date +"%Y-%m-%d")
             
             # 处理标签列表
+            # 确保current_tag不包含完整的镜像路径，只保留标签名
+            if [[ "$current_tag" == *"/"* ]]; then
+              # 如果包含路径分隔符，说明可能是完整的镜像路径，只取最后一部分作为标签
+              clean_tag=$(echo "$current_tag" | awk -F'/' '{print $NF}' | awk -F':' '{print $NF}')
+              if [ "$clean_tag" = "$current_tag" ]; then
+                # 如果没有变化，说明可能是其他格式，保持原样
+                clean_tag="$current_tag"
+              fi
+            else
+              clean_tag="$current_tag"
+            fi
+            
             if [ "$image_exists" = true ]; then
               # 如果镜像已存在，将新标签添加到现有标签列表
               if [ -z "$existing_tags" ]; then
-                tags="$current_tag"
+                tags="$clean_tag"
               else
                 # 检查标签是否已存在
-                if [[ "$existing_tags" != *"$current_tag"* ]]; then
-                  tags="$existing_tags,$current_tag"
+                if [[ "$existing_tags" != *"$clean_tag"* ]]; then
+                  tags="$existing_tags,$clean_tag"
                 else
                   tags="$existing_tags"
                 fi
               fi
             else
               # 如果是新镜像，标签就是当前标签
-              tags="$current_tag"
+              tags="$clean_tag"
             fi
             
             # 准备新行数据，添加标签列
@@ -245,7 +257,10 @@ jobs:
                   fi
                 done
                 
-                # 更新行
+                # 更新行 - 确保没有多余的换行符
+                updated_line="| $existing_name | $existing_registry | $merged_tags | $img_date |"
+                # 移除可能存在的换行符
+                img_date=$(echo "$img_date" | tr -d '\n')
                 updated_line="| $existing_name | $existing_registry | $merged_tags | $img_date |"
                 updated_existing_rows="$updated_existing_rows$updated_line\n"
                 found=true
@@ -267,7 +282,12 @@ jobs:
           # 格式化处理后的新行
           formatted_new_rows=""
           if [ -n "$processed_new_rows" ]; then
-            formatted_new_rows=$(echo -e "$processed_new_rows" | sed '/^$/d' | awk -F"${UNIQUE_SEPARATOR}" '{printf("| %s | %s | %s | %s |\n", $1, $2, $3, $4)}')
+            # 确保日期字段不包含换行符
+            formatted_new_rows=$(echo -e "$processed_new_rows" | sed '/^$/d' | awk -F"${UNIQUE_SEPARATOR}" '{
+              # 移除第4列可能存在的换行符
+              gsub(/\n/, "", $4);
+              printf("| %s | %s | %s | %s |\n", $1, $2, $3, $4);
+            }')
           fi
           
           # 合并并排序所有行
