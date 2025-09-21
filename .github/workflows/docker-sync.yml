@@ -45,7 +45,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git pull --rebase
           
-                 # --- 1. 镜像同步与信息收集 ---
+          # --- 1. 镜像同步与信息收集 ---
           NEW_ROWS_DATA=""
           UNIQUE_SEPARATOR="%%%"
           TABLE_TITLE="### Synced Images"
@@ -302,7 +302,12 @@ jobs:
               next;
             }
             skipping {
-              if (!/^\|/ && !/^$/) { skipping=0 } else { next }
+              if (!/^\|/ && !/^$/) { 
+                print "";  # 在表格结束后添加空行
+                skipping=0 
+              } else { 
+                next 
+              }
             }
             { print }
           ' README.md > README.tmp && mv README.tmp README.md
