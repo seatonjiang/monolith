@@ -239,22 +239,32 @@ jobs:
                 # 合并标签，避免重复
                 merged_tags="$existing_tags"
                 for tag in $(echo "$img_tags" | tr ',' ' '); do
-                  if [[ "$merged_tags" != *"$tag"* ]]; then
+                  # 确保标签不包含 registry 信息
+                  clean_tag=$(echo "$tag" | sed 's/^.*\/\([^\/]*\)$/\1/g' | sed 's/\`//g')
+                  if [[ "$merged_tags" != *"$clean_tag"* ]]; then
                     if [ -z "$merged_tags" ]; then
-                      merged_tags="$tag"
+                      merged_tags="$clean_tag"
                     else
-                      merged_tags="$merged_tags,$tag"
+                      merged_tags="$merged_tags,$clean_tag"
                     fi
                   fi
                 done
                 
                 # 更新行
                 updated_line="| $existing_name | $existing_registry | $merged_tags | $img_date |"
-                updated_existing_rows+="$updated_line\n"
+                if [ -z "$updated_existing_rows" ]; then
+                  updated_existing_rows="$updated_line"
+                else
+                  updated_existing_rows="$updated_existing_rows\n$updated_line"
+                fi
                 found=true
               else
                 # 保留原行
-                updated_existing_rows+="$existing_line\n"
+                if [ -z "$updated_existing_rows" ]; then
+                  updated_existing_rows="$existing_line"
+                else
+                  updated_existing_rows="$updated_existing_rows\n$existing_line"
+                fi
               fi
             done <<< "$existing_rows"
             
@@ -263,7 +273,11 @@ jobs:
               existing_rows="$updated_existing_rows"
             else
               # 添加为新行
-              processed_new_rows+="$line\n"
+              if [ -z "$processed_new_rows" ]; then
+                processed_new_rows="$line"
+              else
+                processed_new_rows="$processed_new_rows\n$line"
+              fi
             fi
           done <<< "$NEW_ROWS_DATA"
           
@@ -276,7 +290,7 @@ jobs:
           # 合并并排序所有行
           sorted_table_rows=$(
             {
-              echo "$existing_rows" 
+              echo -e "$existing_rows" 
               echo -e "$formatted_new_rows"
             } | grep -v '^$' | awk -F'|' '
               {
@@ -308,6 +322,9 @@ jobs:
               if (!/^\|/ && !/^$/) { 
                 print "";  # 在表格结束后添加空行
                 skipping=0 
+              } else if (/^$/) {
+                print "";  # 如果是空行，保留它
+                skipping=0
               } else { 
                 next 
               }
