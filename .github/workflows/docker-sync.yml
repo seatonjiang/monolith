@@ -239,8 +239,8 @@ jobs:
                 # 合并标签，避免重复
                 merged_tags="$existing_tags"
                 for tag in $(echo "$img_tags" | tr ',' ' '); do
-                  # 确保标签不包含 registry 信息
-                  clean_tag=$(echo "$tag" | sed 's/^.*\/\([^\/]*\)$/\1/g' | sed 's/\`//g')
+                  # 确保标签不包含 registry 信息和特殊字符
+                  clean_tag=$(echo "$tag" | sed 's/^.*\/\([^\/]*\)$/\1/g' | sed 's/\`//g' | sed 's/,/ /g')
                   if [[ "$merged_tags" != *"$clean_tag"* ]]; then
                     if [ -z "$merged_tags" ]; then
                       merged_tags="$clean_tag"
@@ -337,9 +337,12 @@ jobs:
           echo "开始更新 README.zh-Hans.md..."
           
           # 确保临时文件干净
-          rm -f new_table.tmp
+          rm -f zh_table.tmp
           
-          # 复制英文版表格到中文版
+          # 为中文版创建表格内容
+          echo "$sorted_table_rows" > zh_table.tmp
+          
+          # 更新中文版 README
           awk '
             BEGIN { replaced=0; title_printed=0 }
             $0 == "### 同步的镜像" && !replaced {
@@ -349,17 +352,10 @@ jobs:
               print "| :--- | :--- | :--- | :--- |";
               title_printed=1;
               
-              # 创建中文版表格内容
-              echo "$sorted_table_rows" > zh_table.tmp
-              
-              # 读取中文版表格内容
               while ((getline line < "zh_table.tmp") > 0) {
                 print line;
               }
               close("zh_table.tmp");
-              rm -f zh_table.tmp
-              }
-              close("new_table.tmp");
               replaced=1;
               skipping=1;
               next;
@@ -388,4 +384,4 @@ jobs:
           fi
           
           # 清理临时文件
-          rm -f new_table.tmp
+          rm -f new_table.tmp zh_table.tmp
