@@ -128,7 +128,7 @@ jobs:
             mkdir -p /tmp/docker-sync
             
             # 使用 skopeo copy 进行同步到本地，--all 参数会自动处理多架构
-            if skopeo copy --all "$SOURCE_IMAGE_URI" "$LOCAL_IMAGE_URI"; then
+            if skopeo copy --override-arch amd64 --override-os linux "$SOURCE_IMAGE_URI" "$LOCAL_IMAGE_URI"; then
               echo "✅ 镜像同步到本地成功"
               
               # 从本地同步到 GHCR
