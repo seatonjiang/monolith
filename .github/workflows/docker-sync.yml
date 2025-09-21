@@ -167,6 +167,7 @@ jobs:
             
             # 处理标签列表
             # 确保current_tag不包含完整的镜像路径，只保留标签名
+            # 清理标签，确保只保留实际标签名（不包含路径和仓库信息）
             if [[ "$current_tag" == *"/"* ]]; then
               # 如果包含路径分隔符，说明可能是完整的镜像路径，只取最后一部分作为标签
               clean_tag=$(echo "$current_tag" | awk -F'/' '{print $NF}' | awk -F':' '{print $NF}')
@@ -196,6 +197,8 @@ jobs:
             fi
             
             # 准备新行数据，添加标签列
+            # 确保同步日期不包含换行符
+            sync_date=$(echo "$sync_date" | tr -d '\n')
             new_line_data="${IMAGE_NAME}${UNIQUE_SEPARATOR}${registry}${UNIQUE_SEPARATOR}${tags}${UNIQUE_SEPARATOR}${sync_date}"
             NEW_ROWS_DATA+="${new_line_data}\n"
           done
@@ -258,9 +261,9 @@ jobs:
                 done
                 
                 # 更新行 - 确保没有多余的换行符
-                updated_line="| $existing_name | $existing_registry | $merged_tags | $img_date |"
-                # 移除可能存在的换行符
+                # 先移除日期字段可能存在的换行符
                 img_date=$(echo "$img_date" | tr -d '\n')
+                # 然后构建更新行
                 updated_line="| $existing_name | $existing_registry | $merged_tags | $img_date |"
                 updated_existing_rows="$updated_existing_rows$updated_line\n"
                 found=true
@@ -282,9 +285,12 @@ jobs:
           # 格式化处理后的新行
           formatted_new_rows=""
           if [ -n "$processed_new_rows" ]; then
-            # 确保日期字段不包含换行符
+            # 格式化新行并确保所有字段不包含换行符
             formatted_new_rows=$(echo -e "$processed_new_rows" | sed '/^$/d' | awk -F"${UNIQUE_SEPARATOR}" '{
-              # 移除第4列可能存在的换行符
+              # 移除所有列可能存在的换行符
+              gsub(/\n/, "", $1);
+              gsub(/\n/, "", $2);
+              gsub(/\n/, "", $3);
               gsub(/\n/, "", $4);
               printf("| %s | %s | %s | %s |\n", $1, $2, $3, $4);
             }')
@@ -297,19 +303,25 @@ jobs:
               echo -e "$formatted_new_rows"
             } | grep -v '^$' | awk -F'|' '
               {
+                # 清理并提取排序键（镜像名称）
                 key = $2;
                 gsub(/^[[:space:]]+|[[:space:]]+$/, "", key);
+                # 清理所有字段中可能存在的换行符
+                gsub(/\n/, "", $0);
                 print key "@@@" $0;
               }
             ' | sort -f | sed 's/^.*@@@//'
           )
 
+          # 生成新表格内容，确保格式正确
           {
             echo "${TABLE_TITLE}"
             echo ""
             echo "| Name | Registry | Tags | Sync Date |"
             echo "| :--- | :--- | :--- | :--- |"
             echo "$sorted_table_rows"
+            # 确保表格后有一个空行
+            echo ""
           } > new_table.tmp
 
           awk '
