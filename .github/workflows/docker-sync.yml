@@ -320,7 +320,7 @@ jobs:
             echo "| Name | Registry | Tags | Sync Date |"
             echo "| :--- | :--- | :--- | :--- |"
             echo "$sorted_table_rows"
-            # 确保表格后有一个空行
+            # 确保表格后有一个空行（使用echo ""而不是\n）
             echo ""
           } > new_table.tmp
 
@@ -363,6 +363,8 @@ jobs:
                 }
               }
               close("new_table.tmp");
+              # 确保表格后有一个空行
+              print "";
               replaced=1;
               skipping=1;
               next;
