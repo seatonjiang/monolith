@@ -45,7 +45,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git pull --rebase
           
-          # --- 1. 镜像同步与信息收集 ---
+                 # --- 1. 镜像同步与信息收集 ---
           NEW_ROWS_DATA=""
           UNIQUE_SEPARATOR="%%%"
           TABLE_TITLE="### Synced Images"
@@ -162,9 +162,6 @@ jobs:
             fi
             registry="\`$registry\`"
             
-            # 确保 current_tag 不包含在 registry 中
-            current_tag=$(echo "$current_tag" | sed 's/\`//g')
-            
             # 获取当前日期作为同步日期（使用北京时间）
             sync_date=$(TZ='Asia/Shanghai' date +"%Y-%m-%d")
             
@@ -239,32 +236,22 @@ jobs:
                 # 合并标签，避免重复
                 merged_tags="$existing_tags"
                 for tag in $(echo "$img_tags" | tr ',' ' '); do
-                  # 确保标签不包含 registry 信息和特殊字符
-                  clean_tag=$(echo "$tag" | sed 's/^.*\/\([^\/]*\)$/\1/g' | sed 's/\`//g' | sed 's/,/ /g')
-                  if [[ "$merged_tags" != *"$clean_tag"* ]]; then
+                  if [[ "$merged_tags" != *"$tag"* ]]; then
                     if [ -z "$merged_tags" ]; then
-                      merged_tags="$clean_tag"
+                      merged_tags="$tag"
                     else
-                      merged_tags="$merged_tags,$clean_tag"
+                      merged_tags="$merged_tags,$tag"
                     fi
                   fi
                 done
                 
                 # 更新行
                 updated_line="| $existing_name | $existing_registry | $merged_tags | $img_date |"
-                if [ -z "$updated_existing_rows" ]; then
-                  updated_existing_rows="$updated_line"
-                else
-                  updated_existing_rows="$updated_existing_rows\n$updated_line"
-                fi
+                updated_existing_rows="$updated_existing_rows$updated_line\n"
                 found=true
               else
                 # 保留原行
-                if [ -z "$updated_existing_rows" ]; then
-                  updated_existing_rows="$existing_line"
-                else
-                  updated_existing_rows="$updated_existing_rows\n$existing_line"
-                fi
+                updated_existing_rows="$updated_existing_rows$existing_line\n"
               fi
             done <<< "$existing_rows"
             
@@ -273,11 +260,7 @@ jobs:
               existing_rows="$updated_existing_rows"
             else
               # 添加为新行
-              if [ -z "$processed_new_rows" ]; then
-                processed_new_rows="$line"
-              else
-                processed_new_rows="$processed_new_rows\n$line"
-              fi
+              processed_new_rows="$processed_new_rows$line\n"
             fi
           done <<< "$NEW_ROWS_DATA"
           
@@ -290,7 +273,7 @@ jobs:
           # 合并并排序所有行
           sorted_table_rows=$(
             {
-              echo -e "$existing_rows" 
+              echo "$existing_rows" 
               echo -e "$formatted_new_rows"
             } | grep -v '^$' | awk -F'|' '
               {
@@ -319,15 +302,7 @@ jobs:
               next;
             }
             skipping {
-              if (!/^\|/ && !/^$/) { 
-                print "";  # 在表格结束后添加空行
-                skipping=0 
-              } else if (/^$/) {
-                print "";  # 如果是空行，保留它
-                skipping=0
-              } else { 
-                next 
-              }
+              if (!/^\|/ && !/^$/) { skipping=0 } else { next }
             }
             { print }
           ' README.md > README.tmp && mv README.tmp README.md
@@ -336,13 +311,7 @@ jobs:
           echo "--------------------------------------------------"
           echo "开始更新 README.zh-Hans.md..."
           
-          # 确保临时文件干净
-          rm -f zh_table.tmp
-          
-          # 为中文版创建表格内容
-          echo "$sorted_table_rows" > zh_table.tmp
-          
-          # 更新中文版 README
+          # 复制英文版表格到中文版
           awk '
             BEGIN { replaced=0; title_printed=0 }
             $0 == "### 同步的镜像" && !replaced {
@@ -352,24 +321,22 @@ jobs:
               print "| :--- | :--- | :--- | :--- |";
               title_printed=1;
               
-              while ((getline line < "zh_table.tmp") > 0) {
-                print line;
+              while ((getline line < "new_table.tmp") > 0) {
+                # 跳过英文版的标题和表头行
+                if (line == "### Synced Images" || line == "| Name | Registry | Tags | Sync Date |" || 
+                    line == "| :--- | :--- | :--- | :--- |" || line == "") {
+                  continue;
+                } else {
+                  print line;
+                }
               }
-              close("zh_table.tmp");
+              close("new_table.tmp");
               replaced=1;
               skipping=1;
               next;
             }
             skipping {
-              if (!/^\|/ && !/^$/) { 
-                print "";  # 在表格结束后添加空行
-                skipping=0 
-              } else if (/^$/) {
-                print "";  # 如果是空行，保留它
-                skipping=0
-              } else { 
-                next 
-              }
+              if (!/^\|/ && !/^$/) { skipping=0 } else { next }
             }
             { print }
           ' README.zh-Hans.md > README.zh-Hans.tmp && mv README.zh-Hans.tmp README.zh-Hans.md
@@ -384,4 +351,4 @@ jobs:
           fi
           
           # 清理临时文件
-          rm -f new_table.tmp zh_table.tmp
+          rm -f new_table.tmp
