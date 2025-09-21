@@ -162,6 +162,9 @@ jobs:
             fi
             registry="\`$registry\`"
             
+            # 确保 current_tag 不包含在 registry 中
+            current_tag=$(echo "$current_tag" | sed 's/\`//g')
+            
             # 获取当前日期作为同步日期（使用北京时间）
             sync_date=$(TZ='Asia/Shanghai' date +"%Y-%m-%d")
             
@@ -247,11 +250,11 @@ jobs:
                 
                 # 更新行
                 updated_line="| $existing_name | $existing_registry | $merged_tags | $img_date |"
-                updated_existing_rows="$updated_existing_rows$updated_line\n"
+                updated_existing_rows+="$updated_line\n"
                 found=true
               else
                 # 保留原行
-                updated_existing_rows="$updated_existing_rows$existing_line\n"
+                updated_existing_rows+="$existing_line\n"
               fi
             done <<< "$existing_rows"
             
@@ -260,7 +263,7 @@ jobs:
               existing_rows="$updated_existing_rows"
             else
               # 添加为新行
-              processed_new_rows="$processed_new_rows$line\n"
+              processed_new_rows+="$line\n"
             fi
           done <<< "$NEW_ROWS_DATA"
           
