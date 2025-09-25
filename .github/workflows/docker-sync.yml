@@ -296,6 +296,7 @@ jobs:
             echo "| Name | Registry | Tags | Sync Date |"
             echo "| :--- | :--- | :--- | :--- |"
             echo "$sorted_table_rows"
+            echo ""
           } > new_table.tmp
 
           awk '
@@ -313,42 +314,8 @@ jobs:
             { print }
           ' README.md > README.tmp && mv README.tmp README.md
 
-          # 更新中文版 README
-          echo "--------------------------------------------------"
-          echo "开始更新 README.zh-Hans.md..."
-          
-          # 复制英文版表格到中文版
-          awk '
-            BEGIN { replaced=0; title_printed=0 }
-            $0 == "### 同步的镜像" && !replaced {
-              print "### 同步的镜像";
-              print "";
-              print "| 镜像名称 | 镜像链接 | 标签 | 同步时间 |";
-              print "| :--- | :--- | :--- | :--- |";
-              title_printed=1;
-              
-              while ((getline line < "new_table.tmp") > 0) {
-                # 跳过英文版的标题和表头行
-                if (line == "### Synced Images" || line == "| Name | Registry | Tags | Sync Date |" || 
-                    line == "| :--- | :--- | :--- | :--- |" || line == "") {
-                  continue;
-                } else {
-                  print line;
-                }
-              }
-              close("new_table.tmp");
-              replaced=1;
-              skipping=1;
-              next;
-            }
-            skipping {
-              if (!/^\|/ && !/^$/) { skipping=0 } else { next }
-            }
-            { print }
-          ' README.zh-Hans.md > README.zh-Hans.tmp && mv README.zh-Hans.tmp README.zh-Hans.md
-          
           # 提交更改
-          git add README.md README.zh-Hans.md
+          git add README.md
           if git diff --staged --quiet; then
             echo "没有新的镜像或文件变更可提交。"
           else
