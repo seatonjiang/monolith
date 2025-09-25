@@ -219,7 +219,7 @@ jobs:
             
             # 解析新行数据
             img_name=$(echo "$line" | awk -F"${UNIQUE_SEPARATOR}" '{print $1}')
-            img_registry=$(echo "$line" | awk -F"${UNIQUE_SEPARATOR}" '{print $2}')
+            img_registry=$(echo "$line" | awk -F"${UNIQUE_SEPARATOR}" '{print $2}' | sed 's/:[^:]*$//')
             img_tags=$(echo "$line" | awk -F"${UNIQUE_SEPARATOR}" '{print $3}')
             img_date=$(echo "$line" | awk -F"${UNIQUE_SEPARATOR}" '{print $4}')
             
