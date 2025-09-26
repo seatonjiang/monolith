@@ -4,7 +4,7 @@ services:
       context: ./services/php
       args:
         - PHP_VERSION=${PHP_VERSION:-8.4-fpm-alpine}
-        - ALPINE_MIRROR=${ALPINE_MIRROR:-mirrors.cloud.tencent.com}
+        - ALPINE_MIRROR=${ALPINE_MIRROR:-mirrors.ustc.edu.cn}
     container_name: php
     restart: always
     volumes:
@@ -25,7 +25,7 @@ services:
       context: ./services/openresty
       args:
         - OPENRESTY_VERSION=${OPENRESTY_VERSION:-alpine}
-        - ALPINE_MIRROR=${ALPINE_MIRROR:-mirrors.cloud.tencent.com}
+        - ALPINE_MIRROR=${ALPINE_MIRROR:-mirrors.ustc.edu.cn}
     container_name: openresty
     restart: always
     ports:
@@ -53,7 +53,7 @@ services:
       context: ./services/mariadb
       args:
         - MARIADB_VERSION=${MARIADB_VERSION:-11.8}
-        - UBUNTU_MIRROR=${UBUNTU_MIRROR:-mirrors.cloud.tencent.com}
+        - UBUNTU_MIRROR=${UBUNTU_MIRROR:-mirrors.ustc.edu.cn}
     container_name: mariadb
     restart: always
     volumes:
@@ -102,7 +102,7 @@ services:
       context: ./services/memcached
       args:
         - MEMCACHED_VERSION=${MEMCACHED_VERSION:-1.6-alpine}
-        - ALPINE_MIRROR=${ALPINE_MIRROR:-mirrors.cloud.tencent.com}
+        - ALPINE_MIRROR=${ALPINE_MIRROR:-mirrors.ustc.edu.cn}
     container_name: memcached
     restart: always
     networks:
@@ -114,7 +114,7 @@ services:
       context: ./services/redis
       args:
         - REDIS_VERSION=${REDIS_VERSION:-8.2-alpine}
-        - ALPINE_MIRROR=${ALPINE_MIRROR:-mirrors.cloud.tencent.com}
+        - ALPINE_MIRROR=${ALPINE_MIRROR:-mirrors.ustc.edu.cn}
     container_name: redis
     restart: always
     volumes:

@@ -3,7 +3,7 @@ FROM docker.cnb.cool/seatonjiang/monolith/mariadb:${MARIADB_VERSION:-11.8}
 
 # 替换 Ubuntu 镜像源
 ARG UBUNTU_MIRROR
-RUN sed -Ei "s@(security|ports|archive).ubuntu.com@${UBUNTU_MIRROR:-mirrors.cloud.tencent.com}@g" /etc/apt/sources.list.d/ubuntu.sources && \
+RUN sed -Ei "s@(security|ports|archive).ubuntu.com@${UBUNTU_MIRROR:-mirrors.ustc.edu.cn}@g" /etc/apt/sources.list.d/ubuntu.sources && \
     apt-get update
 
 # 安装系统依赖
