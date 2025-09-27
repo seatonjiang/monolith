@@ -231,7 +231,7 @@ rename-command FLUSHDB  ""    # 禁用清空当前数据库的命令
 
 | 镜像名称 | 镜像链接 | 标签 | 同步时间 |
 | :--- | :--- | :--- | :--- |
-| fads | `docker.cnb.cool/seatonjiang/monolith/fads` | 3214 | 2025-09-27 |
+| fads | `docker.cnb.cool/seatonjiang/monolith/fads` | 3214,222 | 2025-09-27 |
 
 ## 📚 常见问题
 

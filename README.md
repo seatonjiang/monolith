@@ -230,7 +230,7 @@ rename-command FLUSHDB  ""    # Disable command to clear current database
 | Name | Registry | Tags | Sync Date |
 | :--- | :--- | :--- | :--- |
 | asd | `ghcr.io/seatonjiang/asd` | 222 | 2025-09-27 |
-| fads | `ghcr.io/seatonjiang/fads` | 3214 | 2025-09-27 |
+| fads | `ghcr.io/seatonjiang/fads` | 3214,222 | 2025-09-27 |
 | hello-world | `ghcr.io/seatonjiang/hello-world` | nanoserver,newr,nanos222 | 2025-09-27 |
 | saddsd | `ghcr.io/seatonjiang/saddsd` | 24 | 2025-09-27 |
 
