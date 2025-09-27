@@ -67,6 +67,8 @@ jobs:
             }
           ' README.md)
 
+          echo "existing_image_info: $existing_image_info"
+
           IFS=',' read -r -a image_array <<< "${{ inputs.images }}"
 
           for i in "${!image_array[@]}"; do
@@ -75,7 +77,7 @@ jobs:
 
             # 检查镜像和标签是否已存在
             current_image=$(echo "$full_image" | cut -d':' -f1)
-            current_tag=$(echo "$full_image" | cut -s -d':' -f2); [ -z "$current_tag" ] && current_tag="latest"
+            current_tag=$(echo "$full_image" | cut -s -d':' -f2)
             IMAGE_NAME=$(basename "$current_image")
             
             # 检查镜像是否存在，以及标签是否已包含
@@ -109,14 +111,9 @@ jobs:
             
             echo "--------------------------------------------------"
             echo "===== 开始处理 $full_image ====="
-            target_tag="$current_tag"; [[ "$current_tag" =~ "alpine" ]] && target_tag="alpine"
-            
-            if [ "$current_tag" == "latest" ] || [ "$target_tag" == "alpine" ]; then 
-              sync_status="✔️"
-            else 
-              sync_status="❌"
-            fi
+            target_tag="$current_tag"
 
+            
             SOURCE_IMAGE_URI="docker://$current_image:$current_tag"
             GHCR_IMAGE_URI="docker://ghcr.io/seatonjiang/$IMAGE_NAME:$target_tag"
             CNB_IMAGE_URI="docker://docker.cnb.cool/seatonjiang/monolith/$IMAGE_NAME:$target_tag"
@@ -134,29 +131,29 @@ jobs:
             mkdir -p /tmp/docker-sync
             
             # 使用 skopeo copy 进行同步到本地，--all 参数会自动处理多架构
-            if skopeo copy --all "$SOURCE_IMAGE_URI" "$LOCAL_IMAGE_URI"; then
-              echo "✅ 镜像同步到本地成功"
+            # if skopeo copy --all "$SOURCE_IMAGE_URI" "$LOCAL_IMAGE_URI"; then
+            #   echo "✅ 镜像同步到本地成功"
               
-              # 从本地同步到 GHCR
-              if skopeo copy --all "$LOCAL_IMAGE_URI" "$GHCR_IMAGE_URI"; then
-                echo "✅ 镜像同步到 GHCR 成功"
-              else
-                echo "❌ 镜像同步到 GHCR 失败"
-              fi
+            #   # 从本地同步到 GHCR
+            #   if skopeo copy --all "$LOCAL_IMAGE_URI" "$GHCR_IMAGE_URI"; then
+            #     echo "✅ 镜像同步到 GHCR 成功"
+            #   else
+            #     echo "❌ 镜像同步到 GHCR 失败"
+            #   fi
               
-              # 从本地同步到 CNB
-              if skopeo copy --all "$LOCAL_IMAGE_URI" "$CNB_IMAGE_URI"; then
-                echo "✅ 镜像同步到 CNB 成功"
-              else
-                echo "❌ 镜像同步到 CNB 失败"
-              fi
+            #   # 从本地同步到 CNB
+            #   if skopeo copy --all "$LOCAL_IMAGE_URI" "$CNB_IMAGE_URI"; then
+            #     echo "✅ 镜像同步到 CNB 成功"
+            #   else
+            #     echo "❌ 镜像同步到 CNB 失败"
+            #   fi
               
-              # 清理临时目录
-              rm -rf "/tmp/docker-sync/$IMAGE_NAME:$target_tag"
-            else
-              echo "❌ 镜像同步到本地失败"
-              continue
-            fi
+            #   # 清理临时目录
+            #   rm -rf "/tmp/docker-sync/$IMAGE_NAME:$target_tag"
+            # else
+            #   echo "❌ 镜像同步到本地失败"
+            #   continue
+            # fi
 
 
             # --- 同步逻辑结束 ---
