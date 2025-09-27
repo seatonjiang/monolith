@@ -56,10 +56,11 @@ jobs:
             in_table {
               if (/^\|/) { 
                 # 提取镜像名称和标签信息
-                match($0, /\| *([^|]+) *\| *[^|]+ *\| *([^|]+) *\|/);
-                if (RSTART) { 
-                  name=$2; gsub(/^[ \t]*|[ \t]*$/, "", name);
-                  tags=$4; gsub(/^[ \t]*|[ \t]*$/, "", tags);
+                if (match($0, /\| *([^|]+) *\| *[^|]+ *\| *([^|]+) *\|/, parts)) {
+                  name=parts[1];
+                  tags=parts[2];
+                  gsub(/^[ \t]*|[ \t]*$/, "", name);
+                  gsub(/^[ \t]*|[ \t]*$/, "", tags);
                   print name ":::" tags;
                 }
               }
@@ -113,7 +114,6 @@ jobs:
             echo "===== 开始处理 $full_image ====="
             target_tag="$current_tag"
 
-            
             SOURCE_IMAGE_URI="docker://$current_image:$current_tag"
             GHCR_IMAGE_URI="docker://ghcr.io/seatonjiang/$IMAGE_NAME:$target_tag"
             CNB_IMAGE_URI="docker://docker.cnb.cool/seatonjiang/monolith/$IMAGE_NAME:$target_tag"
