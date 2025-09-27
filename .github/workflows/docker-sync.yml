@@ -184,7 +184,7 @@ jobs:
             
             # 准备新行数据，添加标签列
             new_line_data="${IMAGE_NAME}${UNIQUE_SEPARATOR}${registry}${UNIQUE_SEPARATOR}${tags}${UNIQUE_SEPARATOR}${sync_date}"
-            NEW_ROWS_DATA+="${new_line_data}\n"
+            NEW_ROWS_DATA+="${new_line_data}"$'\n'
           done
 
           if [ -z "$NEW_ROWS_DATA" ]; then
@@ -246,11 +246,11 @@ jobs:
                 
                 # 更新行
                 updated_line="| $existing_name | $existing_registry | $merged_tags | $img_date |"
-                updated_existing_rows="$updated_existing_rows$updated_line\n"
+                updated_existing_rows+="${updated_line}"$'\n'
                 found=true
               else
                 # 保留原行
-                updated_existing_rows="$updated_existing_rows$existing_line\n"
+                updated_existing_rows+="${existing_line}"$'\n'
               fi
             done <<< "$existing_rows"
             
