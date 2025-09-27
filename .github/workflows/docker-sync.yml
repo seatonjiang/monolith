@@ -389,7 +389,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes in README files, no commit needed."
           else
-            git commit -m "docs: add synced Docker image"
+            git commit -m "docs: add a synced Docker image"
             git push
           fi
 
