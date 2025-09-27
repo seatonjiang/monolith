@@ -159,7 +159,7 @@ jobs:
             # --- 同步逻辑结束 ---
 
             # 准备新行的数据
-            registry="`ghcr.io/seatonjiang/$IMAGE_NAME`"
+            registry="ghcr.io/seatonjiang/$IMAGE_NAME"
             
             # 获取当前日期作为同步日期（使用北京时间）
             sync_date=$(TZ='Asia/Shanghai' date +"%Y-%m-%d")
