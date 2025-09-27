@@ -25,13 +25,15 @@ jobs:
         run: |
           owner_lowercase=$(echo "${{ github.repository_owner }}" | tr 'A-Z' 'a-z')
           awk -F '|' '
-          /^### Synced Images/ {capture=1; next}
-          capture && /^\| [a-zA-Z0-9_-]+/ {
+          BEGIN { found_header = 0; }
+          /^### Synced Images/ { capture = 1; next; }
+          capture && /^\| Name \|/ { found_header = 1; next; }
+          capture && found_header && /^\| [a-zA-Z0-9_-]+/ {
               gsub(/^[ \t]+|[ \t]+$/, "", $2); gsub(/`/, "", $2);
               print $2
           }
-          /^### / && capture && !/Synced Images/ {capture=0}
-          ' README.md | grep -vE '^Registry$|^-+$' | sed '/^$/d' | \
+          /^### / && capture && !/Synced Images/ { capture = 0; }
+          ' README.md | sed '/^$/d' | \
           sed "s|^ghcr.io/$owner_lowercase/||" | \
           sed 's/:[^:]*$//' > target-image-list.txt
           echo "===== 将要检查的目标镜像列表 ====="
@@ -41,13 +43,15 @@ jobs:
         id: extract-source-images
         run: |
           awk -F '|' '
-          /^### Synced Images/ {capture=1; next}
-          capture && /^\| [a-zA-Z0-9_-]+/ {
+          BEGIN { found_header = 0; }
+          /^### Synced Images/ { capture = 1; next; }
+          capture && /^\| Name \|/ { found_header = 1; next; }
+          capture && found_header && /^\| [a-zA-Z0-9_-]+/ {
               gsub(/^[ \t]+|[ \t]+$/, "", $1); gsub(/`/, "", $1);
               print $1
           }
-          /^### / && capture && !/Synced Images/ {capture=0}
-          ' README.md | grep -vE '^Name$|^-+$' | sed '/^$/d' > source-image-list.txt
+          /^### / && capture && !/Synced Images/ { capture = 0; }
+          ' README.md | sed '/^$/d' > source-image-list.txt
           echo "===== 对应的源镜像列表 ====="
           cat source-image-list.txt
 
