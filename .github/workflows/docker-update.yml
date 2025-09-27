@@ -24,18 +24,44 @@ jobs:
         run: |
           owner_lowercase=$(echo "${{ github.repository_owner }}" | tr 'A-Z' 'a-z')
           awk -F '|' '
-          BEGIN { found_header = 0; }
-          /^### Synced Images/ { capture = 1; next; }
-          capture && /^\| Name \|/ { found_header = 1; next; }
-          capture && found_header && /^\| [a-zA-Z0-9_-]+/ {
+          /^### Synced Images/ {capture=1; next}
+          capture && /^\| Name/ {header=1; next}
+          capture && header && /^\| :---/ {next}
+          capture && header && /^\| / {
               gsub(/^[ \t]+|[ \t]+$/, "", $2); gsub(/`/, "", $2);
               print $2
           }
-          /^### / && capture && !/Synced Images/ { capture = 0; }
-          ' README.md | sed '/^$/d' | \
+          /^### / && capture && !/Synced Images/ {capture=0}
+          ' README.md | grep -v '^$' | \
           sed "s|^ghcr.io/$owner_lowercase/||" | \
-          sed 's/:[^:]*$//' > combined-list.txt
+          sed 's/:[^:]*$//' > target-image-list.txt
           echo "===== 将要检查的目标镜像列表 ====="
+          cat target-image-list.txt
+
+      - name: 4. 提取源镜像名称
+        id: extract-source-images
+        run: |
+          awk -F '|' '
+          /^### Synced Images/ {capture=1; next}
+          capture && /^\| Name/ {header=1; next}
+          capture && header && /^\| :---/ {next}
+          capture && header && /^\| / {
+              gsub(/^[ \t]+|[ \t]+$/, "", $1); gsub(/`/, "", $1);
+              print $1
+          }
+          /^### / && capture && !/Synced Images/ {capture=0}
+          ' README.md | grep -v '^$' > source-image-list.txt
+          echo "===== 对应的源镜像列表 ====="
+          cat source-image-list.txt
+
+      - name: 5. 合并镜像列表
+        run: |
+          if [ ! -s source-image-list.txt ] || [ ! -s target-image-list.txt ]; then
+            echo "错误：源或目标镜像列表为空，请检查 README.md 表格格式。"
+            exit 1
+          fi
+          paste -d '|' source-image-list.txt target-image-list.txt > combined-list.txt
+          echo "===== 合并后的镜像检查列表 ====="
           cat combined-list.txt
 
       - name: Login to GHCR
@@ -94,14 +120,6 @@ jobs:
               source_image_name_tag="$source_image:latest"
             fi
             owner_lowercase=$(echo "$GHCR_USER" | tr 'A-Z' 'a-z')
-            
-            # 确保target_image不为空，并且移除可能的空格
-            target_image=$(echo "$target_image" | xargs)
-            if [ -z "$target_image" ]; then
-              echo "❌ 错误：目标镜像名称为空，跳过处理。"
-              continue
-            fi
-            
             target_image_name_tag="ghcr.io/$owner_lowercase/$target_image:latest"
             
             SOURCE_IMAGE_URI="docker://$source_image_name_tag"
