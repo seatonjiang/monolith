@@ -231,6 +231,7 @@ rename-command FLUSHDB  ""    # 禁用清空当前数据库的命令
 
 | 镜像名称 | 镜像地址 | 标签 | 同步时间 |
 | :--- | :--- | :--- | :--- |
+| hello-world | `docker.cnb.cool/seatonjiang/monolith/hello-world` | nanoserver | 2025-09-27 |
 
 ## 📚 常见问题
 
