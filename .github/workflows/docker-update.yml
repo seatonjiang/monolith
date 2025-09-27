@@ -35,36 +35,9 @@ jobs:
           /^### / && capture && !/Synced Images/ { capture = 0; }
           ' README.md | sed '/^$/d' | \
           sed "s|^ghcr.io/$owner_lowercase/||" | \
-          sed 's/:[^:]*$//' > target-image-list.txt
+          sed 's/:[^:]*$//' > combined-list.txt
           echo "===== 将要检查的目标镜像列表 ====="
-          cat target-image-list.txt
-
-      - name: 4. 提取源镜像名称
-        id: extract-source-images
-        run: |
-          awk -F '|' '
-          BEGIN { found_header = 0; }
-          /^### Synced Images/ { capture = 1; next; }
-          capture && /^\| Name \|/ { found_header = 1; next; }
-          capture && found_header && /^\| [a-zA-Z0-9_-]+/ {
-              gsub(/^[ \t]+|[ \t]+$/, "", $1); gsub(/`/, "", $1);
-              print $1
-          }
-          /^### / && capture && !/Synced Images/ { capture = 0; }
-          ' README.md | sed '/^$/d' > source-image-list.txt
-          echo "===== 对应的源镜像列表 ====="
-          cat source-image-list.txt
-
-      - name: 5. 合并镜像列表
-        run: |
-          if [ ! -s source-image-list.txt ] || [ ! -s target-image-list.txt ]; then
-            echo "错误：源或目标镜像列表为空，请检查 README.md 表格格式。"
-            exit 1
-          fi
-          paste -d '|' source-image-list.txt target-image-list.txt > combined-list.txt
-          echo "===== 合并后的镜像检查列表 ====="
           cat combined-list.txt
-
 
       - name: Login to GHCR
         uses: docker/login-action@v3
