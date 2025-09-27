@@ -19,7 +19,6 @@ jobs:
       - name: Install Dependencies
         run: sudo apt-get update && sudo apt-get install -y jq skopeo
 
-      # 步骤 3-7 保持不变，它们是正确的
       - name: 3. 提取目标镜像名称
         id: extract-target-images
         run: |
@@ -95,6 +94,14 @@ jobs:
               source_image_name_tag="$source_image:latest"
             fi
             owner_lowercase=$(echo "$GHCR_USER" | tr 'A-Z' 'a-z')
+            
+            # 确保target_image不为空，并且移除可能的空格
+            target_image=$(echo "$target_image" | xargs)
+            if [ -z "$target_image" ]; then
+              echo "❌ 错误：目标镜像名称为空，跳过处理。"
+              continue
+            fi
+            
             target_image_name_tag="ghcr.io/$owner_lowercase/$target_image:latest"
             
             SOURCE_IMAGE_URI="docker://$source_image_name_tag"
