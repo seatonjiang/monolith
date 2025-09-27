@@ -28,7 +28,10 @@ jobs:
           set -e
           echo "===== 从 README.md 提取待检查的镜像 ====="
           
-          # 寻找 ### 同步的镜像 表格
+          # 始终先创建文件，以防后续步骤失败
+          > image-list.txt
+
+          # 生成中间文件
           awk '
             /^### 同步的镜像/ { in_table=1; next }
             in_table {
@@ -51,18 +54,16 @@ jobs:
             }
           }' > image-name-and-tags.txt
 
-          if [ ! -s image-name-and-tags.txt ]; then
-            echo "未在 README.md 中找到要同步的镜像，工作流结束。"
-            exit 0
+          # 如果中间文件有内容，则处理它
+          if [ -s image-name-and-tags.txt ]; then
+            while IFS='|' read -r name tags; do
+              for tag in $(echo "$tags" | tr ',' ' '); do
+                echo "$name|$tag" >> image-list.txt
+              done
+            done < image-name-and-tags.txt
+          else
+            echo "未在 README.md 中找到要同步的镜像。"
           fi
-
-          # 将 "name|tag1,tag2" 转换为 "name|tag1" 和 "name|tag2"
-          > image-list.txt
-          while IFS='|' read -r name tags; do
-            for tag in $(echo "$tags" | tr ',' ' '); do
-              echo "$name|$tag" >> image-list.txt
-            done
-          done < image-name-and-tags.txt
 
           echo "===== 将要检查的镜像和标签 ====="
           cat image-list.txt
