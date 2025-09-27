@@ -42,14 +42,16 @@ jobs:
         id: extract-source-images
         run: |
           awk -F '|' '
-          /^### Synced Images/ {capture=1; next}
-          capture && /^\| Name/ {header=1; next}
-          capture && header && /^\| :---/ {next}
+          BEGIN { capture=0; header=0; }
+          /^### Synced Images/ { capture=1; next; }
+          capture && /^\| Name/ { header=1; next; }
+          capture && header && /^\| :---/ { next; }
           capture && header && /^\| / {
-              gsub(/^[ \t]+|[ \t]+$/, "", $1); gsub(/`/, "", $1);
-              print $1
+              gsub(/^[ \t]+|[ \t]+$/, "", $1); 
+              gsub(/`/, "", $1);
+              print $1;
           }
-          /^### / && capture && !/Synced Images/ {capture=0}
+          /^### / && capture && !/Synced Images/ { capture=0; }
           ' README.md | grep -v '^$' > source-image-list.txt
           echo "===== 对应的源镜像列表 ====="
           cat source-image-list.txt
