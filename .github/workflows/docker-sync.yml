@@ -293,8 +293,8 @@ jobs:
             REGISTRY_PREFIX_ZH="docker.cnb.cool/seatonjiang/monolith/"
 
             # 从README.zh-Hans.md中提取现有行
-            existing_rows_zh=$(awk '
-              $0 == "''"${TABLE_TITLE_ZH}"''" { in_table=1; next }
+            existing_rows_zh=$(awk -v title="${TABLE_TITLE_ZH}" '
+              $0 == title { in_table=1; next }
               in_table {
                 if (/^\|/ && !/^\| :/ && !/^\| 镜像名称 \| 镜像链接 \| 标签 \| 同步时间 \|/) { print }
                 if (!/^\|/ && !/^$/) { in_table=0 }
@@ -394,9 +394,9 @@ jobs:
             } > new_table_zh.tmp
 
             # 替换 README.zh-Hans.md 中的表格
-            awk '
+            awk -v title="${TABLE_TITLE_ZH}" '
               BEGIN { replaced=0 }
-              $0 == "''"${TABLE_TITLE_ZH}"''" && !replaced {
+              $0 == title && !replaced {
                 while ((getline line < "new_table_zh.tmp") > 0) { print line }
                 close("new_table_zh.tmp");
                 replaced=1;
