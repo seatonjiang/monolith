@@ -219,20 +219,16 @@ rename-command FLUSHDB  ""    # Disable command to clear current database
 
 | Name | Registry | Tag | Build Date |
 | :--- | :--- | :--- | :--- |
-| PHP 8.1 | `ghcr.io/seatonjiang/php` | 8.1-fpm-alpine | 2025-09-15 |
-| PHP 8.2 | `ghcr.io/seatonjiang/php` | 8.2-fpm-alpine | 2025-09-15 |
-| PHP 8.3 | `ghcr.io/seatonjiang/php` | 8.3-fpm-alpine | 2025-09-16 |
-| PHP 8.4 | `ghcr.io/seatonjiang/php` | 8.4-fpm-alpine | 2025-09-15 |
-| OpenResty | `ghcr.io/seatonjiang/openresty` | alpine | 2025-09-16 |
+| PHP 8.1 | `ghcr.io/seatonjiang/php` | 8.1-fpm-alpine | |
+| PHP 8.2 | `ghcr.io/seatonjiang/php` | 8.2-fpm-alpine | |
+| PHP 8.3 | `ghcr.io/seatonjiang/php` | 8.3-fpm-alpine | |
+| PHP 8.4 | `ghcr.io/seatonjiang/php` | 8.4-fpm-alpine | |
+| OpenResty | `ghcr.io/seatonjiang/openresty` | alpine | |
 
 ### Synced Images
 
 | Name | Registry | Tags | Sync Date |
 | :--- | :--- | :--- | :--- |
-| asd | `ghcr.io/seatonjiang/asd` | 222 | 2025-09-27 |
-| fads | `ghcr.io/seatonjiang/fads` | 3214,222 | 2025-09-27 |
-| hello-world | `ghcr.io/seatonjiang/hello-world` | nanoserver,newr,nanos222 | 2025-09-27 |
-| saddsd | `ghcr.io/seatonjiang/saddsd` | 24 | 2025-09-27 |
 
 ## 📚 Common Questions
 
