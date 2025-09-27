@@ -68,7 +68,7 @@ jobs:
             }
           ' README.md)
 
-          echo "existing_image_info: $existing_image_info"
+          echo $existing_image_info
 
           IFS=',' read -r -a image_array <<< "${{ inputs.images }}"
 
@@ -159,7 +159,7 @@ jobs:
             # --- 同步逻辑结束 ---
 
             # 准备新行的数据
-            registry="`ghcr.io/seatonjiang/$IMAGE_NAME`"
+            registry="ghcr.io/seatonjiang/$IMAGE_NAME"
             
             # 获取当前日期作为同步日期（使用北京时间）
             sync_date=$(TZ='Asia/Shanghai' date +"%Y-%m-%d")
@@ -266,7 +266,7 @@ jobs:
           # 格式化处理后的新行
           formatted_new_rows=""
           if [ -n "$processed_new_rows" ]; then
-            formatted_new_rows=$(echo -e "$processed_new_rows" | sed '/^$/d' | awk -F"${UNIQUE_SEPARATOR}" '{printf("| %s | %s | %s | %s |\n", $1, $2, $3, $4)}')
+            formatted_new_rows=$(echo -e "$processed_new_rows" | sed '/^$/d' | awk -F"${UNIQUE_SEPARATOR}" '{printf("| %s | `%s` | %s | %s |\n", $1, $2, $3, $4)}')
           fi
           
           # 合并并排序所有行
