@@ -275,7 +275,7 @@ jobs:
             existing_rows_zh=$(awk -v title="${TABLE_TITLE_ZH}" '
               $0 == title { in_table=1; next }
               in_table {
-                if (/^\|/ && !/^\| :/ && !/^\| 镜像名称 \| 镜像地址 \| 标签 \| 同步时间 \|/) { print }
+                if (/^\|/ && !/^\| :/ && !/^\| 镜像名称 \| 镜像地址 \| 标签 \| 同步日期 \|/) { print }
                 if (!/^\|/ && !/^$/) { in_table=0 }
               }
             ' "${README_ZH_FILE}")
@@ -361,7 +361,7 @@ jobs:
             {
               echo "${TABLE_TITLE_ZH}"
               echo ""
-              echo "| 镜像名称 | 镜像地址 | 标签 | 同步时间 |"
+              echo "| 镜像名称 | 镜像地址 | 标签 | 同步日期 |"
               echo "| :--- | :--- | :--- | :--- |"
               echo "$sorted_table_rows_zh"
               echo ""
