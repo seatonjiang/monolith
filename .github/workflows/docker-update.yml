@@ -172,7 +172,7 @@ jobs:
               echo "❌ 同步失败。"
               continue
             fi
-          done < image-list.txt
+          done < target-image-list.txt
           
           echo "updated_any=$updated_any" >> "$GITHUB_OUTPUT"
 
