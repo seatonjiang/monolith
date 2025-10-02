@@ -19,11 +19,9 @@ jobs:
       - name: Install Dependencies
         run: sudo apt-get update && sudo apt-get install -y jq skopeo
 
-      - name: 3. 提取目标镜像名称
+      - name: Extract Target Image Names and Tags
         id: extract-images
         run: |
-          # This script extracts image names and tags from the "Synced Images" table in README.md.
-          # It handles multiple comma-separated tags in a single row, creating a new entry for each.
           awk '
           BEGIN {
             FS = "|";
@@ -32,9 +30,9 @@ jobs:
             name_col = 0;
             tags_col = 0;
           }
-          # Start processing when the "Synced Images" header is found
+
           /^### Synced Images/ { in_table = 1; next; }
-          # Find the header row to dynamically determine column indices for "Name" and "Tags"
+
           in_table && /^\| *Name *\|/ {
             header_found = 1;
             for (i=1; i<=NF; i++) {
@@ -45,19 +43,18 @@ jobs:
             }
             next;
           }
-          # Skip the markdown table separator line
+          
           in_table && header_found && /^\| *:/ { next; }
-          # Process data rows
+          
           in_table && header_found && /^\|/ {
             if (name_col > 0 && tags_col > 0) {
               name = $name_col;
               tags = $tags_col;
-              # Trim whitespace from name and tags fields
+              
               gsub(/^[ \t]+|[ \t]+$/, "", name);
               gsub(/^[ \t]+|[ \t]+$/, "", tags);
               
               if (name != "" && tags != "") {
-                # Split comma-separated tags into an array
                 split(tags, tag_array, ",");
                 for (j in tag_array) {
                   current_tag = tag_array[j];
@@ -69,11 +66,11 @@ jobs:
               }
             }
           }
-          # Stop processing when a new markdown header is found
+          
           /^###/ && in_table && !/Synced Images/ { in_table = 0; }
           ' README.md > target-image-list.txt
 
-          echo "===== Generated Image List ====="
+          echo "===== Image List ====="
           cat target-image-list.txt
 
       - name: Login to GHCR
@@ -89,23 +86,23 @@ jobs:
           registry: docker.cnb.cool
           username: cnb
           password: ${{ secrets.CNB_DOCKER_TOKEN }}
-
-      - name: 6. 检查并同步镜像
-        id: sync
+      
+      - name: Check and Sync Images
         env:
           GHCR_USER: ${{ github.repository_owner }}
+          # 将 Docker 配置文件路径也设为环境变量，方便 skopeo 调用
           DOCKER_CONFIG: /home/runner/.docker
         run: |
           set -eo pipefail
-          
-          updated_any=false
 
+          # 函数：从 manifest 内容中为指定架构提取唯一的 digest
           get_digest_for_arch() {
             local manifest_content=$1
             local arch_name=$2
             if [ -z "$manifest_content" ]; then echo ""; return; fi
             
             if echo "$manifest_content" | jq -e '.manifests' > /dev/null 2>&1; then
+              # 精确匹配架构，并处理 arm/v7 和 arm64/v8 变体
               echo "$manifest_content" | jq -r --arg arch "$arch_name" '
                 .manifests[] | 
                 select(
@@ -114,50 +111,54 @@ jobs:
                   ($arch == "arm64" and .platform.architecture == "arm64" and .platform.variant? == "v8")
                 ) | .digest' | head -n 1
             else
+              # 单架构镜像
               echo "$manifest_content" | jq -r '.digest // empty'
             fi
           }
 
           echo "===== 开始同步镜像 ====="
           
-          while IFS='|' read -r image_name image_tag; do
-            if [ -z "$image_name" ]; then continue; fi
+          while IFS='|' read -r source_image target_image; do
             echo "────────────────────────────────────────"
-            echo "处理镜像: $image_name:$image_tag"
+            echo "处理镜像: $target_image (源镜像: $source_image)"
             
-            if [[ "$image_name" == */* ]]; then
-              if [[ "$image_name" == "gcr.io/"* || "$image_name" == "quay.io/"* ]]; then
-                SOURCE_IMAGE_NAME="$image_name"
-              else
-                SOURCE_IMAGE_NAME="docker.io/$image_name"
-              fi
+            # 准备源和目标URI
+            if [[ "$source_image" == *:* ]]; then
+              source_image_name_tag="$source_image"
             else
-              SOURCE_IMAGE_NAME="docker.io/library/$image_name"
+              source_image_name_tag="$source_image:latest"
             fi
-            SOURCE_IMAGE_URI="docker://${SOURCE_IMAGE_NAME}:${image_tag}"
-
             owner_lowercase=$(echo "$GHCR_USER" | tr 'A-Z' 'a-z')
-            TARGET_IMAGE_URI="docker://ghcr.io/$owner_lowercase/$image_name:$image_tag"
+            target_image_name_tag="ghcr.io/$owner_lowercase/$target_image:latest"
+            
+            SOURCE_IMAGE_URI="docker://$source_image_name_tag"
+            TARGET_IMAGE_URI="docker://$target_image_name_tag"
 
+            # 【修改点 1】增强 skopeo inspect 的错误处理，并添加 --authfile 参数
             if ! source_manifest=$(skopeo inspect --authfile ${DOCKER_CONFIG}/config.json --raw "$SOURCE_IMAGE_URI" 2>/dev/null); then
-              echo "❌ 错误：检查源镜像失败 '$SOURCE_IMAGE_URI'。"
-              continue
-            fi
-            if [ -z "$source_manifest" ]; then
-              echo "❌ 错误：源镜像清单为空 '$SOURCE_IMAGE_URI'。"
+              echo "❌ 错误：执行 'skopeo inspect' 失败 (可能是网络问题或镜像不存在)，已跳过 '$SOURCE_IMAGE_URI'。"
               continue
             fi
             
+            if [ -z "$source_manifest" ]; then
+              echo "❌ 错误：无法获取源镜像清单 (清单为空)，已跳过 '$SOURCE_IMAGE_URI'。"
+              continue
+            fi
+            
+            # 【修改点 2】为目标镜像的 inspect 也添加认证参数，并优化逻辑
             target_manifest=$(skopeo inspect --authfile ${DOCKER_CONFIG}/config.json --raw "$TARGET_IMAGE_URI" 2>/dev/null || echo "")
             
-            ARCHS_TO_CHECK="amd64 arm64 arm"
+            # 确定要检查的架构列表
+            ARCHS_TO_CHECK="amd64 arm64 arm" # 我们只关心这几个主流架构
+            
             need_update=false
             if [ -z "$target_manifest" ]; then
               need_update=true
-              echo "目标镜像不存在，需要同步。"
+              echo "目标镜像不存在，判定需要同步。"
             else
               for arch in $ARCHS_TO_CHECK; do
                 source_digest_for_arch=$(get_digest_for_arch "$source_manifest" "$arch")
+                # 如果源镜像压根不支持这个架构，我们就没必要比较了
                 if [ -z "$source_digest_for_arch" ]; then continue; fi
 
                 target_digest_for_arch=$(get_digest_for_arch "$target_manifest" "$arch")
@@ -165,60 +166,42 @@ jobs:
                 
                 if [ "$source_digest_for_arch" != "$target_digest_for_arch" ]; then
                   need_update=true
-                  echo "摘要不匹配，需要同步。"
+                  echo "发现不匹配的摘要，判定需要同步。"
                   break
                 fi
               done
             fi
 
             if [ "$need_update" = "false" ]; then
-              echo "✅ 摘要匹配，跳过同步。"
+              echo "✅ 所有已检查架构的摘要均匹配，跳过同步。"
               continue
             fi
 
-            echo "开始同步..."
+            echo "开始使用 skopeo copy 同步..."
+
+            # 【修改点 3】为 skopeo copy 添加 --all 和 --authfile 参数
             if skopeo copy --all --authfile ${DOCKER_CONFIG}/config.json "$SOURCE_IMAGE_URI" "$TARGET_IMAGE_URI"; then
-              echo "✅ 同步成功: $image_name:$image_tag"
-              updated_any=true
-              
-              today=$(date +'%Y-%m-%d')
-              
-              awk -F'|' -v img_name="$image_name" -v date="$today" '
-                BEGIN{OFS=FS} {
-                  current_name = $2;
-                  gsub(/^[[:space:]]+|[[:space:]]+$/, "", current_name);
-                  if (current_name == img_name) { $5 = " " date " "; }
-                  print;
-                }' README.md > README.tmp && mv README.tmp README.md
-              echo "已更新 README.md"
-
-              if [ -f README.zh-Hans.md ]; then
-                awk -F'|' -v img_name="$image_name" -v date="$today" '
-                  BEGIN{OFS=FS} {
-                    current_name = $2;
-                    gsub(/^[[:space:]]+|[[:space:]]+$/, "", current_name);
-                    if (current_name == img_name) { $5 = " " date " "; }
-                    print;
-                  }' README.zh-Hans.md > README.zh.tmp && mv README.zh.tmp README.zh-Hans.md
-                echo "已更新 README.zh-Hans.md"
-              fi
+              echo "✅ 镜像同步成功: $target_image_name_tag"
             else
-              echo "❌ 同步失败。"
+              echo "❌ 镜像同步失败，请检查源镜像是否存在或网络连接。"
               continue
             fi
-          done < target-image-list.txt
-          
-          echo "updated_any=$updated_any" >> "$GITHUB_OUTPUT"
 
-      - name: 7. 提交 README 变更
-        if: steps.sync.outputs.updated_any == 'true'
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add README.md README.zh-Hans.md
-          if ! git diff --staged --quiet; then
-            git commit -m "chore(sync): 自动更新镜像同步日期"
-            git push
-          else
-            echo "README 文件无变更，无需提交。"
-          fi
+            # 更新 README.md
+            today=$(date +'%Y-%m-%d')
+            awk -F'|' -v img_name="$target_image" -v date="$today" '
+              BEGIN{OFS=FS}
+              $4 ~ "`ghcr.io/.*/" img_name "(:[^`]+)?`" && $6 ~ /✔️/ { $7 = " " date " "; print; next }
+              {print}
+            ' README.md > README.tmp && mv README.tmp README.md
+            
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add README.md
+            if ! git diff --staged --quiet; then
+              git commit -m "chore(sync): 更新镜像 [$target_image] 的同步时间"
+              git push
+            else
+              echo "README.md 无变更，无需提交。"
+            fi
+          done < combined-list.txt
