@@ -20,26 +20,60 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y jq skopeo
 
       - name: 3. 提取目标镜像名称
-        id: extract-target-images
+        id: extract-images
         run: |
-          owner_lowercase=$(echo "${{ github.repository_owner }}" | tr 'A-Z' 'a-z')
-          # 使用awk提取目标镜像名称，适应不固定位置的表格
+          # This script extracts image names and tags from the "Synced Images" table in README.md.
+          # It handles multiple comma-separated tags in a single row, creating a new entry for each.
           awk '
-          BEGIN { in_table = 0; found_header = 0; }
-          /^### Synced Images/ { in_table = 1; next; }
-          in_table && /^\| Name \|/ { found_header = 1; next; }
-          in_table && found_header && /^\| :---/ { next; }
-          in_table && found_header && /^\| / {
-            split($0, parts, "|");
-            gsub(/^[ \t]+|[ \t]+$/, "", parts[3]);
-            gsub(/`/, "", parts[3]);
-            print parts[3];
+          BEGIN {
+            FS = "|";
+            in_table = 0;
+            header_found = 0;
+            name_col = 0;
+            tags_col = 0;
           }
+          # Start processing when the "Synced Images" header is found
+          /^### Synced Images/ { in_table = 1; next; }
+          # Find the header row to dynamically determine column indices for "Name" and "Tags"
+          in_table && /^\| *Name *\|/ {
+            header_found = 1;
+            for (i=1; i<=NF; i++) {
+              header = $i;
+              gsub(/^[ \t]+|[ \t]+$/, "", header); # Trim whitespace
+              if (header == "Name") name_col = i;
+              if (header == "Tags") tags_col = i;
+            }
+            next;
+          }
+          # Skip the markdown table separator line
+          in_table && header_found && /^\| *:/ { next; }
+          # Process data rows
+          in_table && header_found && /^\|/ {
+            if (name_col > 0 && tags_col > 0) {
+              name = $name_col;
+              tags = $tags_col;
+              # Trim whitespace from name and tags fields
+              gsub(/^[ \t]+|[ \t]+$/, "", name);
+              gsub(/^[ \t]+|[ \t]+$/, "", tags);
+              
+              if (name != "" && tags != "") {
+                # Split comma-separated tags into an array
+                split(tags, tag_array, ",");
+                for (j in tag_array) {
+                  current_tag = tag_array[j];
+                  gsub(/^[ \t]+|[ \t]+$/, "", current_tag); # Trim tag
+                  if (current_tag != "") {
+                    print name ":" current_tag;
+                  }
+                }
+              }
+            }
+          }
+          # Stop processing when a new markdown header is found
           /^###/ && in_table && !/Synced Images/ { in_table = 0; }
-          ' README.md | grep -v '^$' | \
-          sed "s|^ghcr.io/$owner_lowercase/||" | \
-          sed 's/:[^:]*$//' > target-image-list.txt
-          echo "===== 将要检查的目标镜像列表 ====="
+          ' README.md > target-image-list.txt
+
+          echo "===== Generated Image List ====="
           cat target-image-list.txt
 
       - name: Login to GHCR
