@@ -204,4 +204,4 @@ jobs:
             else
               echo "README.md 无变更，无需提交。"
             fi
-          done < combined-list.txt
+          done < target-image-list.txt
