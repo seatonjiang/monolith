@@ -159,7 +159,6 @@ jobs:
             exit 0
           fi
 
-          echo "--------------------------------------------------"
           echo "Updating README.md..."
 
           existing_rows=$(awk '
@@ -262,7 +261,6 @@ jobs:
 
           git add README.md
 
-          echo "--------------------------------------------------"
           echo "Updating README.zh-Hans.md..."
 
           if [ -f "README.zh-Hans.md" ]; then
