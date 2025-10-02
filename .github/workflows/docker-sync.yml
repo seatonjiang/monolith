@@ -100,7 +100,6 @@ jobs:
               continue
             fi
             
-            echo "--------------------------------------------------"
             echo "Processing $full_image..."
             target_tag="$current_tag"
 
@@ -156,7 +155,6 @@ jobs:
           done
 
           if [ -z "$NEW_ROWS_DATA" ]; then
-            echo "--------------------------------------------------"
             echo "No new images added, no update needed!"
             exit 0
           fi
