@@ -230,6 +230,7 @@ rename-command FLUSHDB  ""    # Disable command to clear current database
 | Name | Registry | Tags | Sync Date |
 | :--- | :--- | :--- | :--- |
 | hello-world | `ghcr.io/seatonjiang/hello-world` | nanoserver | 2025-09-27 |
+| openresty | `ghcr.io/seatonjiang/openresty` | alpine | 2025-10-02 |
 
 ## 📚 Common Questions
 
