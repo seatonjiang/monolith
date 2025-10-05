@@ -1,0 +1,42 @@
+name: Sync Repository to CNB
+
+on:
+  push:
+    branches: [main]
+  workflow_run:
+    workflows:
+      [
+        "Build PHP 8.1 Image",
+        "Build PHP 8.2 Image",
+        "Build PHP 8.3 Image",
+        "Build PHP 8.4 Image",
+        "Build OpenResty Image",
+        "Sync Docker Image",
+        "Update Docker Image",
+      ]
+    types:
+      - completed
+
+jobs:
+  sync-to-cnb:
+    name: Sync to CNB Repository
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sync to CNB Repository
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:${{ github.workspace }} \
+            -w ${{ github.workspace }} \
+            -e PLUGIN_TARGET_URL="https://cnb.cool/seatonjiang/monolith.git" \
+            -e PLUGIN_AUTH_TYPE="https" \
+            -e PLUGIN_USERNAME="cnb" \
+            -e PLUGIN_PASSWORD=${{ secrets.CNB_SYNC_TOKEN }} \
+            -e PLUGIN_PUSH_TAGS="true" \
+            -e PLUGIN_FORCE="true" \
+            tencentcom/git-sync

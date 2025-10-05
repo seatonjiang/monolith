@@ -1,0 +1,210 @@
+name: Update Docker Image
+
+on:
+  schedule:
+    - cron: "0 16 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  check-and-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: sudo apt-get update && sudo apt-get install -y jq skopeo
+
+      - name: Extract Target Image Names and Tags
+        id: extract-images
+        run: |
+          awk '
+          BEGIN {
+            FS = "|";
+            in_table = 0;
+            header_found = 0;
+            name_col = 0;
+            tags_col = 0;
+          }
+
+          /^### Synced Images/ { in_table = 1; next; }
+
+          in_table && /^\| *Name *\|/ {
+            header_found = 1;
+            for (i=1; i<=NF; i++) {
+              header = $i;
+              gsub(/^[ \t]+|[ \t]+$/, "", header); # Trim whitespace
+              if (header == "Name") name_col = i;
+              if (header == "Tags") tags_col = i;
+            }
+            next;
+          }
+          
+          in_table && header_found && /^\| *:/ { next; }
+          
+          in_table && header_found && /^\|/ {
+            if (name_col > 0 && tags_col > 0) {
+              name = $name_col;
+              tags = $tags_col;
+              
+              gsub(/^[ \t]+|[ \t]+$/, "", name);
+              gsub(/^[ \t]+|[ \t]+$/, "", tags);
+              
+              if (name != "" && tags != "") {
+                split(tags, tag_array, ",");
+                for (j in tag_array) {
+                  current_tag = tag_array[j];
+                  gsub(/^[ \t]+|[ \t]+$/, "", current_tag); # Trim tag
+                  if (current_tag != "") {
+                    print name ":" current_tag;
+                  }
+                }
+              }
+            }
+          }
+          
+          /^###/ && in_table && !/Synced Images/ { in_table = 0; }
+          ' README.md > target-image-list.txt
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: seatonjiang
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Login to CNB
+        uses: docker/login-action@v3
+        with:
+          registry: docker.cnb.cool
+          username: cnb
+          password: ${{ secrets.CNB_DOCKER_TOKEN }}
+      
+      - name: Check and Sync Images
+        env:
+          GHCR_USER: ${{ github.repository_owner }}
+        run: |
+          set -eo pipefail
+
+          while IFS='|' read -r source_image; do
+            echo "Processing image: $source_image"
+            
+            owner_lowercase=$(echo "$GHCR_USER" | tr 'A-Z' 'a-z')
+
+            original_source_image="$source_image"
+            image_name_without_tag=$(echo "$source_image" | cut -d':' -f1)
+            tag=$(echo "$source_image" | cut -s -d':' -f2)
+            simple_image_name=$(basename "$image_name_without_tag")
+
+            if [ -n "$tag" ]; then
+              simple_image_with_tag="$simple_image_name:$tag"
+            else
+              simple_image_with_tag="$simple_image_name"
+            fi
+
+            target_image_name_tag="ghcr.io/$owner_lowercase/$simple_image_with_tag"
+            
+            SOURCE_IMAGE_URI="docker://$original_source_image"
+            TARGET_IMAGE_URI="docker://$target_image_name_tag"
+            CNB_IMAGE_URI="docker://docker.cnb.cool/seatonjiang/monolith/$simple_image_name:$tag"
+            LOCAL_IMAGE_URI="dir:/tmp/docker-sync/$simple_image_name:$tag"
+
+            if ! source_manifest=$(skopeo inspect --raw "$SOURCE_IMAGE_URI" 2>/dev/null); then
+              echo "Error: Failed to execute 'skopeo inspect' (possibly a network issue or image does not exist), skipped '$SOURCE_IMAGE_URI'."
+              continue
+            fi
+            
+            if [ -z "$source_manifest" ]; then
+              echo "Error: Failed to get source image manifest (manifest is empty), skipped '$SOURCE_IMAGE_URI'."
+              continue
+            fi
+            
+            target_manifest=$(skopeo inspect --raw "$TARGET_IMAGE_URI" 2>/dev/null || echo "")
+            
+            need_update=false
+            if [ -z "$target_manifest" ]; then
+              need_update=true
+              echo "Target image does not exist, need to sync."
+            else
+              if [ "$source_manifest" != "$target_manifest" ]; then
+                need_update=true
+                echo "Discovered mismatched digest, need to sync."
+                break
+              fi
+            fi
+
+            if [ "$need_update" = "false" ]; then
+              echo "All checked architectures have matched digests, skip sync."
+              continue
+            fi
+            
+            mkdir -p /tmp/docker-sync
+
+            if skopeo copy --all "$SOURCE_IMAGE_URI" "$LOCAL_IMAGE_URI"; then
+              echo "Local sync of $original_source_image successful!"
+              
+              if skopeo copy --all "$LOCAL_IMAGE_URI" "$TARGET_IMAGE_URI"; then
+                echo "GHCR sync of $original_source_image successful!"
+              else
+                echo "GHCR sync of $original_source_image failed!"
+              fi
+              
+              if skopeo copy --all "$LOCAL_IMAGE_URI" "$CNB_IMAGE_URI"; then
+                echo "CNB sync of $original_source_image successful!"
+              else
+                echo "CNB sync of $original_source_image failed!"
+              fi
+              
+              rm -rf "/tmp/docker-sync/$simple_image_name:$tag"
+            else
+              echo "Local sync of $original_source_image failed!"
+              continue
+            fi
+
+            today=$(TZ=Asia/Shanghai date +"%Y-%m-%d")
+            full_image_name=$(echo "$original_source_image" | sed 's/:.*//')
+
+            awk -F'|' -v img_name="$full_image_name" -v date="$today" '
+              BEGIN { OFS=FS; in_table=0 }
+              /### Synced Images/ { in_table=1 }
+              in_table && /^### / && !/### Synced Images/ { in_table=0 }
+              in_table && /\|/ {
+                trimmed_col = $2;
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", trimmed_col);
+                if (trimmed_col == img_name) {
+                  $5 = " " date " ";
+                }
+              }
+              { print }
+            ' README.md > README.tmp && mv README.tmp README.md
+
+            awk -F'|' -v img_name="$full_image_name" -v date="$today" '
+              BEGIN { OFS=FS; in_table=0 }
+              /### 同步的镜像/ { in_table=1 }
+              in_table && /^### / && !/### 同步的镜像/ { in_table=0 }
+              in_table && /\|/ {
+                trimmed_col = $2;
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", trimmed_col);
+                if (trimmed_col == img_name) {
+                  $5 = " " date " ";
+                }
+              }
+              { print }
+            ' README.zh-Hans.md > README.tmp && mv README.tmp README.zh-Hans.md
+            
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add README.md README.zh-Hans.md
+            if ! git diff --staged --quiet; then
+              timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+              git commit -m "docs: update sync date for $simple_image_name"
+              git push
+            else
+              echo "README.md and README.zh-Hans.md have no changes, skip commit."
+            fi
+
+          done < target-image-list.txt
