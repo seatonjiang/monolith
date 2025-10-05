@@ -229,6 +229,7 @@ rename-command FLUSHDB  ""    # Disable command to clear current database
 
 | Name | Registry | Tags | Sync Date |
 | :--- | :--- | :--- | :--- |
+| phpmyadmin | `ghcr.io/seatonjiang/phpmyadmin` | 5.2 | 2025-10-06 |
 
 ## 📚 Common Questions
 
