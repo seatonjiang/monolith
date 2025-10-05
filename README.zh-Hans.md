@@ -231,6 +231,7 @@ rename-command FLUSHDB  ""    # 禁用清空当前数据库的命令
 
 | 镜像名称 | 镜像地址 | 标签 | 同步日期 |
 | :--- | :--- | :--- | :--- |
+| mariadb | `docker.cnb.cool/seatonjiang/monolith/mariadb` | 11.8 | 2025-10-06 |
 | phpmyadmin | `docker.cnb.cool/seatonjiang/monolith/phpmyadmin` | 5.2 | 2025-10-06 |
 
 ## 📚 常见问题
