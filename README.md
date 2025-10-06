@@ -222,7 +222,7 @@ rename-command FLUSHDB  ""    # Disable command to clear current database
 | PHP 8.1 | `ghcr.io/seatonjiang/php` | 8.1-fpm-alpine | 2025-10-06 |
 | PHP 8.2 | `ghcr.io/seatonjiang/php` | 8.2-fpm-alpine | 2025-10-06 |
 | PHP 8.3 | `ghcr.io/seatonjiang/php` | 8.3-fpm-alpine | 2025-10-06 |
-| PHP 8.4 | `ghcr.io/seatonjiang/php` | 8.4-fpm-alpine | |
+| PHP 8.4 | `ghcr.io/seatonjiang/php` | 8.4-fpm-alpine | 2025-10-06 |
 | OpenResty | `ghcr.io/seatonjiang/openresty` | alpine | 2025-10-06 |
 
 ### Synced Images
