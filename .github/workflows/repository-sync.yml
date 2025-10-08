@@ -6,8 +6,6 @@ on:
   workflow_run:
     workflows:
       [
-        "Build PHP 8.1 Image",
-        "Build PHP 8.2 Image",
         "Build PHP 8.3 Image",
         "Build PHP 8.4 Image",
         "Build OpenResty Image",

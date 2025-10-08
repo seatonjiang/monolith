@@ -33,7 +33,7 @@ vi .env
 重点配置项说明：
 
 ```ini
-# PHP 版本（支持 8.1-8.4）
+# PHP 版本
 PHP_VERSION=8.4-fpm-alpine
 
 # MariaDB 默认数据库名称
@@ -221,8 +221,6 @@ rename-command FLUSHDB  ""    # 禁用清空当前数据库的命令
 
 | 镜像名称 | 镜像地址 | 镜像标签 | 构建时间 |
 | :--- | :--- | :--- | :--- |
-| PHP 8.1 | `docker.cnb.cool/seatonjiang/monolith/php` | 8.1-fpm-alpine | 2025-10-06 |
-| PHP 8.2 | `docker.cnb.cool/seatonjiang/monolith/php` | 8.2-fpm-alpine | 2025-10-06 |
 | PHP 8.3 | `docker.cnb.cool/seatonjiang/monolith/php` | 8.3-fpm-alpine | 2025-10-06 |
 | PHP 8.4 | `docker.cnb.cool/seatonjiang/monolith/php` | 8.4-fpm-alpine | 2025-10-06 |
 | OpenResty | `docker.cnb.cool/seatonjiang/monolith/openresty` | alpine | 2025-10-06 |
