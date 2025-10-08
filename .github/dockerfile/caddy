@@ -3,14 +3,13 @@ FROM caddy:builder-alpine AS builder
 RUN apk update && apk --no-cache add brotli-dev
 
 RUN xcaddy build \
-    --with github.com/dunglas/caddy-cbrotli \
     --with github.com/caddy-dns/tencentcloud \
     --with github.com/caddy-dns/alidns \
-    --with github.com/caddy-dns/route53 \
+    # --with github.com/caddy-dns/route53 \
     --with github.com/caddy-dns/cloudflare \
     --with github.com/caddy-dns/godaddy \
-    --with github.com/caddy-dns/digitalocean \
-    --with github.com/caddy-dns/namecheap
+    # --with github.com/caddy-dns/namecheap \
+    --with github.com/caddy-dns/digitalocean
 
 FROM caddy:alpine
 
