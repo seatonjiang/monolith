@@ -11,6 +11,7 @@ on:
         "Build PHP 8.3 Image",
         "Build PHP 8.4 Image",
         "Build OpenResty Image",
+        "Build Caddy Image",
         "Sync Docker Image",
         "Update Docker Image",
       ]

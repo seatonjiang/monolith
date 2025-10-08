@@ -226,6 +226,7 @@ rename-command FLUSHDB  ""    # 禁用清空当前数据库的命令
 | PHP 8.3 | `docker.cnb.cool/seatonjiang/monolith/php` | 8.3-fpm-alpine | 2025-10-06 |
 | PHP 8.4 | `docker.cnb.cool/seatonjiang/monolith/php` | 8.4-fpm-alpine | 2025-10-06 |
 | OpenResty | `docker.cnb.cool/seatonjiang/monolith/openresty` | alpine | 2025-10-06 |
+| Caddy | `docker.cnb.cool/seatonjiang/monolith/caddy` | alpine | |
 
 ### 同步的镜像
 
