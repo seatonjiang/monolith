@@ -230,7 +230,7 @@ rename-command FLUSHDB  ""    # Disable command to clear current database
 | :--- | :--- | :--- | :--- |
 | mariadb | `ghcr.io/seatonjiang/mariadb` | 11.8 | 2025-10-06 |
 | memcached | `ghcr.io/seatonjiang/memcached` | 1.6-alpine | 2025-10-09 |
-| phpmyadmin | `ghcr.io/seatonjiang/phpmyadmin` | 5.2 | 2025-10-06 |
+| phpmyadmin | `ghcr.io/seatonjiang/phpmyadmin` | 5.2 | 2025-10-09 |
 | redis | `ghcr.io/seatonjiang/redis` | 8.2-alpine | 2025-10-06 |
 
 ## 📚 Common Questions
