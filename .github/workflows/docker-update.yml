@@ -133,7 +133,6 @@ jobs:
               if [ "$source_manifest" != "$target_manifest" ]; then
                 need_update=true
                 echo "Discovered mismatched digest, need to sync."
-                break
               fi
             fi
 
