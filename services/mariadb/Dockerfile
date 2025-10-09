@@ -8,8 +8,7 @@ RUN sed -Ei "s@(security|ports|archive).ubuntu.com@${UBUNTU_MIRROR:-mirrors.ustc
     apt-get update
 
 # 安装系统依赖
-RUN apt-get install -y logrotate cron && \
-    rm -rf /var/lib/apt/lists/*
+RUN apt-get install -y logrotate cron && rm -rf /var/lib/apt/lists/*
 
 # 设置日志轮转定时任务
 RUN echo "0 0 * * * root logrotate -f /etc/logrotate.d/mariadb" >> /etc/crontab
