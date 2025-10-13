@@ -1,6 +1,8 @@
 name: Build PHP 8.4 Image
 
 on:
+  schedule:
+    - cron: "24 6 * * 1"
   workflow_dispatch:
 
 jobs:
