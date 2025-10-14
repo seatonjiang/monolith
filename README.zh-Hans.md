@@ -1,6 +1,6 @@
 # Monolith
 
-基于 Docker 轻松构建 PHP 生产环境，集成了 OpenResty、PHP、MariaDB、Redis、Memcached 等常用服务。
+基于 Docker 轻松构建 PHP 生产环境，集成了 OpenResty、Caddy、PHP、MariaDB、Redis、Memcached 等常用服务。
 
 ## 🚀 快速入门
 
@@ -30,7 +30,7 @@ cp env.example .env
 vi .env
 ```
 
-重点配置项说明：
+重点配置项：
 
 ```ini
 # PHP 版本
@@ -43,7 +43,7 @@ MARIADB_DATABASE_NAME=monolith
 PHPMYADMIN_WEB_PORT=28080
 ```
 
-> **提示**：云服务器需要在防火墙中放通 80、443 以及 phpMyAdmin 访问端口（默认端口为 28080）。
+> 提示：云服务器需要在防火墙中放通 80、443 以及 phpMyAdmin 访问端口（默认为 28080）。
 
 ### 第三步：修改密码
 
@@ -53,7 +53,7 @@ PHPMYADMIN_WEB_PORT=28080
 - `mariadb-user-name`：MariaDB 用户名称（默认为 `user`）
 - `mariadb-user-pwd`：MariaDB 用户密码
 
-> **提示**：在生产环境中，请务必修改默认密码，并确保使用强密码，使用用户级权限进行访问。
+> 提示：在生产环境中，请务必修改默认密码，并确保使用强密码，使用用户级权限进行访问。
 
 ### 第四步：构建容器
 
@@ -63,12 +63,18 @@ PHPMYADMIN_WEB_PORT=28080
 docker compose up -d
 ```
 
+> 提示：默认使用 OpenResty 作为 Web 服务器，如需使用 Caddy 作为 Web 服务器，请修改 `compose.yaml` 中的相关配置。  
+
 ### 第五步：网站浏览
 
 - **本地环境**：`http://localhost`
 - **线上环境**：`http://服务器 IP 地址`
 
-> **提示**：默认站点目录为 `wwwroot/default`，为了提高安全性，在生产环境中应取消注释 `default.conf` 中的 `return 403;` 配置（`services/openresty/conf.d/default.conf`），并删除或备份默认站点目录。这样可以防止未经授权的访问和潜在的安全风险。
+### 第六步：安全清理
+
+- 默认站点目录为 `wwwroot/default`，测试完成后请立即删除该目录及对应配置，避免暴露默认页面。  
+- 若使用 OpenResty 作为 Web 服务器，编辑 `services/openresty/conf.d/default.conf` 文件，删除测试环境配置并编写生产环境配置。  
+- 若使用 Caddy 作为 Web 服务器，编辑 `services/caddy/conf/Caddyfile` 文件，删除测试环境配置并编写生产环境配置。
 
 ## 📂 目录结构
 
@@ -77,9 +83,11 @@ docker compose up -d
 ```bash
 monolith
 ├── data                            数据持久化目录
+│   ├── caddy                       Caddy 数据目录
 │   ├── mariadb                     MariaDB 数据目录
 │   └── redis                       Redis 数据目录
 ├── logs                            日志存储目录
+│   ├── caddy                       Caddy 日志目录
 │   ├── mariadb                     MariaDB 日志目录
 │   ├── openresty                   OpenResty 日志目录
 │   ├── php                         PHP 日志目录
@@ -89,6 +97,7 @@ monolith
 │   ├── mariadb-user-name           MariaDB 用户名称
 │   └── mariadb-user-pwd            MariaDB 用户密码
 ├── services                        服务配置目录
+│   ├── caddy                       Caddy 配置目录
 │   ├── mariadb                     MariaDB 配置目录
 │   ├── memcached                   Memcached 配置目录
 │   ├── openresty                   OpenResty 配置目录
@@ -109,7 +118,7 @@ monolith
 # 构建并后台运行全部容器
 docker compose up -d
 
-# 构建并后台运行指定容器（不运行 phpMyAdmin）
+# 构建并后台运行指定容器（不运行 Caddy 和 phpMyAdmin）
 docker compose up -d openresty php mariadb redis memcached
 
 # 停止全部容器并移除网络
@@ -132,6 +141,9 @@ docker exec -it php /bin/sh
 
 # 进入运行中的 OpenResty 容器
 docker exec -it openresty /bin/sh
+
+# 进入运行中的 Caddy 容器
+docker exec -it caddy /bin/sh
 
 # 进入运行中的 MariaDB 容器
 docker exec -it mariadb /bin/bash
@@ -304,11 +316,237 @@ server {
 docker exec -it openresty nginx -s reload
 ```
 
-> **提示**：可以参考 `services/openresty/conf.d/` 目录下的 `example.com.conf.example` 示例文件来创建新的网站配置。
+> 提示：可以参考 `services/openresty/conf.d/` 目录下的 `example.com.conf.example` 示例文件来创建新的网站配置。
 
 #### 第五步：测试访问
 
 在浏览器中输入 `https://example.com` 测试网站是否正常访问。
+
+</details>
+
+<details>
+<summary><strong>Caddy 新增网站</strong></summary>
+
+要在 Caddy 中添加新网站，请按照以下步骤操作：
+
+#### 第一步：编辑网站配置文件
+
+在 `services/caddy/conf/Caddyfile` 文件中添加新的网站配置，例如：
+
+```caddy
+http://example.com {
+    redir https://example.com{uri} permanent
+        header {
+        -Server
+        -Via
+    }
+}
+
+example.com {
+    log {
+        output file /var/log/caddy/example.com.log {
+            roll_size 100mb
+            roll_keep 5
+            roll_keep_for 720h
+        }
+        format json
+        level WARN
+    }
+
+    root * /var/www/example.com
+
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'"
+        X-Frame-Options "SAMEORIGIN"
+        X-XSS-Protection "1; mode=block"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+        -Server
+        -Via
+    }
+
+    tls /config/ssl/example.com.pem /config/ssl/example.com.pem
+
+    encode {
+        gzip 6
+        zstd
+        minimum_length 1024
+        match {
+            header Content-Type text/*
+            header Content-Type application/json*
+            header Content-Type application/javascript*
+            header Content-Type application/xml*
+            header Content-Type image/svg+xml*
+        }
+    }
+
+    @static {
+        file
+        path *.css *.js *.png *.jpg *.jpeg *.gif *.ico *.svg *.woff *.woff2 *.ttf *.eot *.webp
+    }
+    header @static {
+        Cache-Control "public, max-age=31536000, immutable"
+        Vary "Accept-Encoding"
+    }
+
+    @forbidden {
+        path /.* /composer.* /package.* *.log *.bak *.backup *.sql *.env*
+    }
+    respond @forbidden 403
+
+    php_fastcgi php:9000 {
+        env PHP_ADMIN_VALUE "open_basedir=/var/www/example.com:/tmp"
+        env PHP_ADMIN_VALUE "disable_functions=exec,passthru,shell_exec,system,proc_open,popen,curl_exec,curl_multi_exec,parse_ini_file,show_source"
+        read_timeout 30s
+        write_timeout 30s
+        dial_timeout 3s
+        index index.php
+    }
+
+    file_server {
+        hide .htaccess .env .git .gitignore composer.json composer.lock package.json
+        index index.php index.html index.htm
+    }
+}
+```
+
+> 提示：更多配置说明请参考 Caddy 官方文档 [Caddy Documentation](https://caddyserver.com/docs/caddyfile)
+
+#### 第二步：创建网站目录
+
+在 `wwwroot` 目录下创建对应的网站目录，例如 `example.com`。
+
+#### 第三步：重新加载
+
+```bash
+docker exec -w /etc/caddy caddy caddy reload
+```
+
+#### 第四步：测试访问
+
+在浏览器中输入 `https://example.com` 测试网站是否正常访问。
+
+</details>
+
+<details>
+<summary><strong>Caddy 自动配置 SSL 证书</strong></summary>
+
+要在 Caddy 中自动配置 SSL 证书，请按照以下步骤操作：
+
+#### 第一步：添加域名配置
+
+在 `services/caddy/conf/Caddyfile` 文件指定域名中添加配置，如果已经手动配置了证书，需要将 `tls` 部分改为以下内容：
+
+```caddy
+example.com {
+    ...
+    # 手动配置证书（如果已配置证书，需要将这行注释掉）
+    # tls /config/ssl/example.com.pem /config/ssl/example.com.pem
+
+    # 自动配置证书（以腾讯云 DNS 为例）
+    tls {
+        dns tencentcloud {
+            secret_id <TENCENTCLOUD_SECRET_ID>
+            secret_key <TENCENTCLOUD_SECRET_KEY>
+        }
+    }
+    ...
+}
+```
+
+Monolith 的 Caddy 镜像编译了以下 DNS 模块：
+
+- `dns.providers.tencentcloud`
+- `dns.providers.alidns`
+- `dns.providers.route53`
+- `dns.providers.cloudflare`
+- `dns.providers.godaddy`
+- `dns.providers.digitalocean`
+
+可以根据实际情况选择不同的 DNS 提供商，以下是各个供应商的配置示例：
+
+```caddy
+# 腾讯云 DNS
+dns tencentcloud {
+    secret_id <TENCENTCLOUD_SECRET_ID>
+    secret_key <TENCENTCLOUD_SECRET_KEY>
+}
+
+# 阿里云 DNS
+dns alidns {
+    access_key_id <ALIYUN_ACCESS_KEY_ID>
+    access_key_secret <ALIYUN_ACCESS_KEY_SECRET>
+}
+
+# Route53 DNS
+dns route53 {
+    access_key_id <AWS_ACCESS_KEY_ID>
+    secret_access_key <AWS_SECRET_ACCESS_KEY>
+}
+
+# Cloudflare DNS
+dns cloudflare <CF_API_TOKEN>
+
+# Godaddy DNS
+dns godaddy {
+    api_token <GODADDY_API_TOKEN>
+}
+
+# DigitalOcean DNS
+dns digitalocean <DIGITALOCEAN_API_TOKEN>
+```
+
+#### 第二步：重新加载
+
+```bash
+docker exec -w /etc/caddy caddy caddy reload
+```
+
+#### 第三步：测试访问
+
+在浏览器中输入 `https://example.com` 测试网站是否正常访问。
+
+</details>
+
+<details>
+<summary><strong>Caddy 使用 Google Trust Services 签发证书</strong></summary>
+
+要使用 Google Trust Services 签发证书，请按照以下步骤操作：
+
+#### 第一步：获取 EAB 密钥
+
+通过 Google Cloud Shell 获取 EAB 密钥，执行以下命令：
+
+```bash
+gcloud publicca external-account-keys create
+```
+
+> 提示：在获得 EAB 密钥后的 7 天内需要使用该密钥，如果 7 天内未使用密钥将会过期。但使用 EAB 密钥注册的 ACME 账号没有到期时间。
+
+#### 第二步：添加 EAB 密钥到 Caddyfile
+
+在 `services/caddy/conf/Caddyfile` 文件中的 `全局配置` 中取消注释并添加获取到的 EAB 密钥配置，例如：
+
+```caddy
+# 使用 Google Trust Services 签发证书（选配）
+acme_ca https://dv.acme-v02.api.pki.goog/directory
+acme_eab {
+    key_id XXXXXXXXXXXXXXXXX
+    mac_key XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+}
+```
+
+#### 第三步：重新加载
+
+```bash
+docker exec -w /etc/caddy caddy caddy reload
+```
+
+#### 第四步：测试访问
+
+在浏览器中输入 `https://example.com` 测试网站是否正常访问并查看证书颁发者。
 
 </details>
 
@@ -322,7 +560,7 @@ docker exec -it php /bin/sh
 install-php-extensions smbclient
 ```
 
-> **提示**：支持的扩展列表请参考：[docker-php-extension-installer](https://github.com/mlocati/docker-php-extension-installer#supported-php-extensions)
+> 提示：支持的扩展列表参考 [docker-php-extension-installer](https://github.com/mlocati/docker-php-extension-installer#supported-php-extensions)
 
 </details>
 
@@ -336,34 +574,34 @@ slowlog = /var/log/php/slowlog.log
 request_slowlog_timeout = 3
 ```
 
-> **注意**：生产环境中建议关闭慢脚本日志，以提高性能。
+> 提示：生产环境中建议关闭慢脚本日志，以提高性能。
 
 </details>
 
 <details>
 <summary><strong>MariaDB 开启慢查询日志</strong></summary>
 
-修改 `services/mariadb/mariadb.cnf` 文件，将下面参数设置为 1：
+修改 `services/mariadb/mariadb.cnf` 文件，将以下两个参数设置为 1：
 
 ```ini
 slow_query_log=1
 log_queries_not_using_indexes=1
 ```
 
-> **注意**：生产环境建议将这些参数设置为 0，以提高性能。
+> 提示：生产环境建议将这些参数设置为 0，以提高性能。
 
 </details>
 
 <details>
 <summary><strong>MariaDB 通用查询日志配置</strong></summary>
 
-修改 `services/mariadb/mariadb.cnf` 文件，将下面参数设置为 1：
+修改 `services/mariadb/mariadb.cnf` 文件，找到 `general_log` 参数并设置为 1：
 
 ```ini
 general_log=1
 ```
 
-> **注意**：生产环境建议将这些参数设置为 0，以提高性能。
+> 提示：生产环境建议将这些参数设置为 0，以提高性能。
 
 </details>
 
@@ -376,7 +614,7 @@ general_log=1
 requirepass your_strong_password
 ```
 
-> **注意**：请使用强密码，避免使用默认密码 `foobared`。
+> 提示：请使用强密码，避免使用默认密码 `foobared`。
 
 </details>
 
