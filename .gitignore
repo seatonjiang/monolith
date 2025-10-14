@@ -39,12 +39,14 @@ $RECYCLE.BIN/
 .nfs*
 
 # 数据目录
+/data/caddy/*
 /data/mariadb/*
 /data/redis/*
 !data/*/.gitkeep
 
 # 日志目录
 /logs/openresty/*
+/logs/caddy/*
 /logs/php/*
 /logs/mariadb/*
 /logs/redis/*
@@ -60,3 +62,5 @@ $RECYCLE.BIN/
 # SSL 证书
 /services/openresty/ssl/*
 !services/openresty/ssl/.gitkeep
+/services/caddy/ssl/*
+!services/caddy/ssl/.gitkeep

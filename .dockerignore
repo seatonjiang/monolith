@@ -61,6 +61,7 @@ services/mariadb/scripts/
 
 # SSL 证书
 services/openresty/ssl/
+services/caddy/ssl/
 
 # 文档
 LICENSE
