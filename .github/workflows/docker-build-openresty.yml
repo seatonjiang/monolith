@@ -62,36 +62,11 @@ jobs:
           IMAGE_NAME="OpenResty"
           BUILD_TIME=$(TZ='Asia/Shanghai' date '+%Y-%m-%d')
           README_FILE="README.md"
-          README_ZH_FILE="README.zh-Hans.md"
           TEMP_README="README.tmp"
-          TEMP_README_ZH="README.zh-Hans.tmp"
 
-          # Update English README
+          # Update README
           if grep -qF "$IMAGE_NAME" "$README_FILE"; then
-            echo "Updating build date in English README: $IMAGE_NAME"
-
-            awk -v image_name="$IMAGE_NAME" -v new_date="$BUILD_TIME" '
-            BEGIN {
-                FS = "\\s*\\|\\s*";
-                in_build_table = 0;
-            }
-
-            /^### Built Images/ { in_build_table = 1 }
-            /^### Synced Images/ { in_build_table = 0 }
-
-            in_build_table && $2 ~ image_name {
-                printf "| %s | %s | %s | %s |", $2, $3, $4, new_date
-                print ""
-                next
-            }
-            
-            { print $0 }
-            ' "$README_FILE" > "$TEMP_README" && mv "$TEMP_README" "$README_FILE"
-          fi
-
-          # Update Chinese README
-          if grep -qF "$IMAGE_NAME" "$README_ZH_FILE"; then
-            echo "Updating build date in Chinese README: $IMAGE_NAME"
+            echo "Updating build date in README: $IMAGE_NAME"
 
             awk -v image_name="$IMAGE_NAME" -v new_date="$BUILD_TIME" '
             BEGIN {
@@ -109,12 +84,12 @@ jobs:
             }
             
             { print $0 }
-            ' "$README_ZH_FILE" > "$TEMP_README_ZH" && mv "$TEMP_README_ZH" "$README_ZH_FILE"
+            ' "$README_FILE" > "$TEMP_README" && mv "$TEMP_README" "$README_FILE"
           fi
 
-          git add "$README_FILE" "$README_ZH_FILE"
+          git add "$README_FILE"
           if git diff --staged --quiet; then
-            echo "No changes in README files, no commit needed."
+            echo "No changes in README file, no commit needed."
           else
             git commit -m "docs: update build record for image"
             git push

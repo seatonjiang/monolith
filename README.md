@@ -1,263 +1,269 @@
 # Monolith
 
-Easily build PHP production environments based on Docker, integrating commonly used services such as OpenResty, Caddy, PHP, MariaDB, Redis, Memcached.
+基于 Docker 轻松构建 PHP 生产环境，集成了 OpenResty、Caddy、PHP、MariaDB、Redis、Memcached 等常用服务。
 
-## 🚀 Quick Start
+## 🚀 快速入门
 
-### Step 1: Clone Repository
+### 第一步：克隆仓库
 
 ```bash
 git clone --depth 1 https://github.com/seatonjiang/monolith.git
 ```
 
-### Step 2: Edit Configuration
+国内可以使用镜像仓库：
 
-Enter the project folder:
+```bash
+git clone --depth 1 https://cnb.cool/seatonjiang/monolith.git
+```
+
+### 第二步：编辑配置
+
+进入项目文件夹：
 
 ```bash
 cd monolith/
 ```
 
-Rename the environment configuration file (if you don't execute this command, default configuration will be used):
+重命名环境配置文件（如果不执行此命令，将使用默认配置）：
 
 ```bash
 cp env.example .env
 ```
 
-Edit the `.env` file and modify the configuration as needed:
+编辑 `.env` 文件，根据需要修改配置：
 
 ```bash
 vi .env
 ```
 
-Key configuration items:
+重点配置项：
 
 ```ini
-# PHP Version
+# PHP 版本
 PHP_VERSION=8.4-fpm-alpine
 
-# MariaDB Default Database Name
+# MariaDB 默认数据库名称
 MARIADB_DATABASE_NAME=monolith
 
-# phpMyAdmin Access Port
+# phpMyAdmin 访问端口
 PHPMYADMIN_WEB_PORT=28080
 ```
 
-> Tip: Cloud servers need to open ports 80, 443, and phpMyAdmin access port (default 28080) in the firewall.
+> 提示：云服务器需要在防火墙中放通 80、443 以及 phpMyAdmin 访问端口（默认为 28080）。
 
-### Step 3: Modify Passwords
+### 第三步：修改密码
 
-Modify the configuration files in the `secrets` directory:
+修改 `secrets` 目录中的配置文件：
 
-- `mariadb-root-pwd`: MariaDB administrator password (username: `root`)
-- `mariadb-user-name`: MariaDB username (default: `user`)
-- `mariadb-user-pwd`: MariaDB user password
+- `mariadb-root-pwd`：MariaDB 管理员密码（账号为 `root`）
+- `mariadb-user-name`：MariaDB 用户名称（默认为 `user`）
+- `mariadb-user-pwd`：MariaDB 用户密码
 
-> Tip: In production environments, be sure to modify default passwords and ensure strong passwords are used, with user-level permissions for access.
+> 提示：在生产环境中，请务必修改默认密码，并确保使用强密码，使用用户级权限进行访问。
 
-### Step 4: Build Containers
+### 第四步：构建容器
 
-Build and run all containers in the background:
+构建并后台运行全部容器：
 
 ```bash
 docker compose up -d
 ```
 
-> Tip: OpenResty is used as the web server by default. If you need to use Caddy as the web server, please modify the relevant configuration in `compose.yaml`.
+> 提示：默认使用 OpenResty 作为 Web 服务器，如需使用 Caddy 作为 Web 服务器，请修改 `compose.yaml` 中的相关配置。  
 
-### Step 5: Website Browsing
+### 第五步：网站浏览
 
-- **Local Environment**: `http://localhost`
-- **Online Environment**: `http://Server IP Address`
+- **本地环境**：`http://localhost`
+- **线上环境**：`http://服务器 IP 地址`
 
-### Step 6: Security Cleanup
+### 第六步：安全清理
 
-- The default site directory is `wwwroot/default`. Please delete this directory and corresponding configuration immediately after testing to avoid exposing default pages.
-- If using OpenResty as the web server, edit the `services/openresty/conf.d/default.conf` file, delete test environment configuration and write production environment configuration.
-- If using Caddy as the web server, edit the `services/caddy/Caddyfile` file, delete test environment configuration and write production environment configuration.
+- 默认站点目录为 `wwwroot/default`，测试完成后请立即删除该目录及对应配置，避免暴露默认页面。  
+- 若使用 OpenResty 作为 Web 服务器，编辑 `services/openresty/conf.d/default.conf` 文件，删除测试环境配置并编写生产环境配置。  
+- 若使用 Caddy 作为 Web 服务器，编辑 `services/caddy/conf/Caddyfile` 文件，删除测试环境配置并编写生产环境配置。
 
-## 📂 Directory Structure
+## 📂 目录结构
 
-Project directory structure description:
+项目目录结构说明：
 
 ```bash
 monolith
-├── data                            Data persistence directory
-│   ├── caddy                       Caddy data directory
-│   ├── mariadb                     MariaDB data directory
-│   └── redis                       Redis data directory
-├── logs                            Log storage directory
-│   ├── caddy                       Caddy log directory
-│   ├── mariadb                     MariaDB log directory
-│   ├── openresty                   OpenResty log directory
-│   ├── php                         PHP log directory
-│   └── redis                       Redis log directory
-├── secrets                         Secret configuration directory
-│   ├── mariadb-root-pwd            MariaDB administrator password
-│   ├── mariadb-user-name           MariaDB username
-│   └── mariadb-user-pwd            MariaDB user password
-├── services                        Service configuration directory
-│   ├── caddy                       Caddy configuration directory
-│   ├── mariadb                     MariaDB configuration directory
-│   ├── memcached                   Memcached configuration directory
-│   ├── openresty                   OpenResty configuration directory
-│   ├── php                         PHP configuration directory
-│   ├── phpmyadmin                  phpMyAdmin configuration directory
-│   └── redis                       Redis configuration directory
-├── wwwroot                         Web service root directory
-│   └── default                     Default site directory
-├── compose.yaml                    Docker Compose configuration file
-└── env.example                     Environment configuration example file
+├── data                            数据持久化目录
+│   ├── caddy                       Caddy 数据目录
+│   ├── mariadb                     MariaDB 数据目录
+│   └── redis                       Redis 数据目录
+├── logs                            日志存储目录
+│   ├── caddy                       Caddy 日志目录
+│   ├── mariadb                     MariaDB 日志目录
+│   ├── openresty                   OpenResty 日志目录
+│   ├── php                         PHP 日志目录
+│   └── redis                       Redis 日志目录
+├── secrets                         密钥配置目录
+│   ├── mariadb-root-pwd            MariaDB 管理员密码
+│   ├── mariadb-user-name           MariaDB 用户名称
+│   └── mariadb-user-pwd            MariaDB 用户密码
+├── services                        服务配置目录
+│   ├── caddy                       Caddy 配置目录
+│   ├── mariadb                     MariaDB 配置目录
+│   ├── memcached                   Memcached 配置目录
+│   ├── openresty                   OpenResty 配置目录
+│   ├── phpmyadmin                  phpMyAdmin 配置目录
+│   ├── php                         PHP 配置目录
+│   └── redis                       Redis 配置目录
+├── wwwroot                         Web 服务根目录
+│   └── default                     默认站点目录
+├── compose.yaml                    Docker Compose 配置文件
+└── env.example                     环境配置示例文件
 ```
 
-## 💻 Management Commands
+## 💻 管理命令
 
-### Container Management
+### 管理容器
 
 ```bash
-# Build and run all containers in the background
+# 构建并后台运行全部容器
 docker compose up -d
 
-# Build and run specified containers in the background (without running Caddy and phpMyAdmin)
+# 构建并后台运行指定容器（不运行 Caddy 和 phpMyAdmin）
 docker compose up -d openresty php mariadb redis memcached
 
-# Stop all containers and remove networks
+# 停止全部容器并移除网络
 docker compose down
 
-# Manage specified services (using PHP container as example)
-docker compose start php            # Start service
-docker compose stop php             # Stop service
-docker compose restart php          # Restart service
-docker compose build php            # Rebuild service
+# 管理指定服务（这里以 PHP 容器为例）
+docker compose start php            # 启动服务
+docker compose stop php             # 停止服务
+docker compose restart php          # 重启服务
+docker compose build php            # 重新构建服务
 ```
 
-### Enter Containers
+### 进入容器
 
-During operations, `docker exec -it` is frequently used to enter containers. Here are common commands:
+运维过程中经常会使用 `docker exec -it` 进入容器，下面是常用的命令：
 
 ```bash
-# Enter running PHP container
+# 进入运行中的 PHP 容器
 docker exec -it php /bin/sh
 
-# Enter running OpenResty container
+# 进入运行中的 OpenResty 容器
 docker exec -it openresty /bin/sh
 
-# Enter running Caddy container
+# 进入运行中的 Caddy 容器
 docker exec -it caddy /bin/sh
 
-# Enter running MariaDB container
+# 进入运行中的 MariaDB 容器
 docker exec -it mariadb /bin/bash
 
-# Enter running Redis container
+# 进入运行中的 Redis 容器
 docker exec -it redis /bin/sh
 
-# Enter running Memcached container
+# 进入运行中的 Memcached 容器
 docker exec -it memcached /bin/sh
 
-# Enter running phpMyAdmin container
+# 进入运行中的 phpMyAdmin 容器
 docker exec -it phpmyadmin /bin/bash
 ```
 
-## 🔧 Performance Optimization
+## 🔧 性能优化
 
-### PHP Optimization
+### PHP 优化
 
-You can optimize PHP performance by modifying the `services/php/php.ini` file according to actual conditions. Here are the optimized contents:
+可以通过修改 `services/php/php.ini` 文件根据实际情况优化 PHP 性能，下面是已经优化的内容：
 
 ```ini
-# Execution time and memory limits
-max_execution_time = 180              # Maximum script execution time (seconds)
-memory_limit = 256M                   # Maximum memory available to PHP processes
-max_input_time = 300                  # Maximum time for each script to parse request data (seconds)
+# 执行时间和内存限制
+max_execution_time = 180              # 脚本最大执行时间（秒）
+memory_limit = 256M                   # PHP 进程可用最大内存
+max_input_time = 300                  # 每个脚本解析请求数据的最大时间（秒）
 
-# Form and upload limits
-max_input_vars = 5000                 # Maximum number of input variables
-post_max_size = 65M                   # Maximum size of POST data
-upload_max_filesize = 64M             # Maximum upload file size
+# 表单和上传限制
+max_input_vars = 5000                 # 最大输入变量数量
+post_max_size = 65M                   # POST 数据最大尺寸
+upload_max_filesize = 64M             # 上传文件最大尺寸
 
-# Locale settings
-date.timezone = Asia/Shanghai         # Timezone setting
+# 区域设置
+date.timezone = Asia/Shanghai         # 时区设置
 
-# Error handling
-error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT      # Error reporting level
-error_log = /var/log/php/error.log                       # Error log location
+# 错误处理
+error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT      # 错误报告级别
+error_log = /var/log/php/error.log                       # 错误日志位置
 ```
 
-### MariaDB Optimization
+### MariaDB 优化
 
-You can optimize MariaDB performance by modifying the `services/mariadb/mariadb.cnf` file according to actual conditions. Here are optimization recommendations based on server resources:
+可以通过修改 `services/mariadb/mariadb.cnf` 文件根据实际情况优化 MariaDB 性能，以下是根据服务器资源的优化建议：
 
 ```ini
-# Small server (2GB memory)
-innodb_buffer_pool_size=256M          # InnoDB buffer pool size
-tmp_table_size=128M                   # Maximum size of memory temporary tables
-max_heap_table_size=128M              # Maximum size of user-created memory tables
+# 小型服务器（2GB 内存）
+innodb_buffer_pool_size=256M          # InnoDB 缓冲池大小
+tmp_table_size=128M                   # 内存临时表最大大小
+max_heap_table_size=128M              # 用户创建的内存表最大大小
 
-# Medium server (4GB memory)
-innodb_buffer_pool_size=512M          # InnoDB buffer pool size
-tmp_table_size=256M                   # Maximum size of memory temporary tables
-max_heap_table_size=256M              # Maximum size of user-created memory tables
+# 中型服务器（4GB 内存）
+innodb_buffer_pool_size=512M          # InnoDB 缓冲池大小
+tmp_table_size=256M                   # 内存临时表最大大小
+max_heap_table_size=256M              # 用户创建的内存表最大大小
 
-# Large server (8GB+ memory)
-innodb_buffer_pool_size=2G            # InnoDB buffer pool size
-tmp_table_size=512M                   # Maximum size of memory temporary tables
-max_heap_table_size=512M              # Maximum size of user-created memory tables
+# 大型服务器（8GB+ 内存）
+innodb_buffer_pool_size=2G            # InnoDB 缓冲池大小
+tmp_table_size=512M                   # 内存临时表最大大小
+max_heap_table_size=512M              # 用户创建的内存表最大大小
 
-# Performance monitoring (enable when needed in low-spec production environments)
+# 性能监控（如果是低配生产环境，在需要的时候开启）
 performance_schema=ON
 performance_schema_max_table_instances=400
 ```
 
-### Redis Optimization
+### Redis 优化
 
-You can optimize Redis performance by modifying the `services/redis/redis.conf` file according to actual conditions. Here are the optimized contents:
+可以通过修改 `services/redis/redis.conf` 文件根据实际情况优化 Redis 性能，下面是已经优化的内容：
 
 ```ini
-# Network configuration
-bind 0.0.0.0                  # Allow access to Redis service from any IP address, Redis service is only used internally, can use 0.0.0.0
+# 网络配置
+bind 0.0.0.0                  # 允许从任何 IP 地址访问 Redis 服务，Redis 服务只在内部使用，可以使用 0.0.0.0
 
-# Persistence strategy
-save 900 1                    # At least 1 key modified within 900 seconds
-save 300 10                   # At least 10 keys modified within 300 seconds
-save 60 10000                 # At least 10000 keys modified within 60 seconds
+# 持久化策略
+save 900 1                    # 900 秒内至少有 1 个键被修改
+save 300 10                   # 300 秒内至少有 10 个键被修改
+save 60 10000                 # 60 秒内至少有 10000 个键被修改
 
-# Security configuration
-rename-command FLUSHALL ""    # Disable command to clear all databases
-rename-command EVAL     ""    # Disable command to execute Lua scripts
-rename-command FLUSHDB  ""    # Disable command to clear current database
+# 安全配置
+rename-command FLUSHALL ""    # 禁用清空所有数据库的命令
+rename-command EVAL     ""    # 禁用执行Lua脚本的命令
+rename-command FLUSHDB  ""    # 禁用清空当前数据库的命令
 ```
 
-## 📦 Image List
+## 📦 镜像列表
 
-### Built Images
+### 构建的镜像
 
-| Name | Registry | Tag | Build Date |
+| 镜像名称 | 镜像地址 | 镜像标签 | 构建时间 |
 | :--- | :--- | :--- | :--- |
-| PHP 8.3 | `ghcr.io/seatonjiang/php` | 8.3-fpm-alpine | 2025-10-13 |
-| PHP 8.4 | `ghcr.io/seatonjiang/php` | 8.4-fpm-alpine | 2025-10-13 |
-| OpenResty | `ghcr.io/seatonjiang/openresty` | alpine | 2025-10-06 |
-| Caddy | `ghcr.io/seatonjiang/caddy` | alpine | 2025-10-14 |
+| PHP 8.3 | `ghcr.io/seatonjiang/php` <br> `docker.cnb.cool/seatonjiang/monolith/php` | 8.3-fpm-alpine | 2025-10-13 |
+| PHP 8.4 | `ghcr.io/seatonjiang/php` <br> `docker.cnb.cool/seatonjiang/monolith/php` | 8.4-fpm-alpine | 2025-10-13 |
+| OpenResty | `ghcr.io/seatonjiang/openresty` <br> `docker.cnb.cool/seatonjiang/monolith/openresty` | alpine | 2025-10-06 |
+| Caddy | `ghcr.io/seatonjiang/caddy` <br> `docker.cnb.cool/seatonjiang/monolith/caddy` | alpine | 2025-10-14 |
 
-### Synced Images
+### 同步的镜像
 
-| Name | Registry | Tags | Sync Date |
+| 镜像名称 | 镜像地址 | 标签 | 同步日期 |
 | :--- | :--- | :--- | :--- |
-| mariadb | `ghcr.io/seatonjiang/mariadb` | 11.8 | 2025-10-11 |
-| memcached | `ghcr.io/seatonjiang/memcached` | 1.6-alpine | 2025-10-09 |
-| phpmyadmin | `ghcr.io/seatonjiang/phpmyadmin` | 5.2 | 2025-10-09 |
-| redis | `ghcr.io/seatonjiang/redis` | 8.2-alpine | 2025-10-12 |
+| mariadb | `ghcr.io/seatonjiang/mariadb` <br> `docker.cnb.cool/seatonjiang/monolith/mariadb` | 11.8 | 2025-10-11 |
+| memcached | `ghcr.io/seatonjiang/memcached` <br> `docker.cnb.cool/seatonjiang/monolith/memcached` | 1.6-alpine | 2025-10-09 |
+| phpmyadmin | `ghcr.io/seatonjiang/phpmyadmin` <br> `docker.cnb.cool/seatonjiang/monolith/phpmyadmin` | 5.2 | 2025-10-09 |
+| redis | `ghcr.io/seatonjiang/redis` <br> `docker.cnb.cool/seatonjiang/monolith/redis` | 8.2-alpine | 2025-10-12 |
 
-## 📚 FAQ
+## 📚 常见问题
 
 <details>
 
-<summary><strong>Adding New Website in OpenResty</strong></summary>
+<summary><strong>OpenResty 新增网站</strong></summary>
 
-To add a new website in OpenResty, please follow these steps:
+要在 OpenResty 中添加新网站，请按照以下步骤操作：
 
-#### Step 1: Create Website Configuration File
+#### 第一步：创建网站配置文件
 
-Create a new configuration file in the `services/openresty/conf.d/` directory, for example `example.com.conf`:
+在 `services/openresty/conf.d/` 目录下创建新的配置文件，例如 `example.com.conf`：
 
 ```nginx
 server {
@@ -302,36 +308,36 @@ server {
 }
 ```
 
-#### Step 2: Create Website Directory
+#### 第二步：创建网站目录
 
-Create the corresponding website directory in the `wwwroot` directory, for example `example.com`.
+在 `wwwroot` 目录下创建对应的网站目录，例如 `example.com`。
 
-#### Step 3: Configure SSL Certificate
+#### 第三步：配置 SSL 证书
 
-Place SSL certificates in the `services/openresty/ssl/` directory, with certificate file named `example.com.crt` and private key file named `example.com.key`.
+将 SSL 证书放置在 `services/openresty/ssl/` 目录下，证书文件名称为 `example.com.crt`，私钥文件名称为 `example.com.key`。
 
-#### Step 4: Reload OpenResty Configuration
+#### 第四步：重新加载 OpenResty 配置
 
 ```bash
 docker exec -it openresty nginx -s reload
 ```
 
-> Tip: You can refer to the `example.com.conf.example` example file in the `services/openresty/conf.d/` directory to create new website configurations.
+> 提示：可以参考 `services/openresty/conf.d/` 目录下的 `example.com.conf.example` 示例文件来创建新的网站配置。
 
-#### Step 5: Test Access
+#### 第五步：测试访问
 
-Enter `https://example.com` in your browser to test if the website is accessible normally.
+在浏览器中输入 `https://example.com` 测试网站是否正常访问。
 
 </details>
 
 <details>
-<summary><strong>Adding New Website in Caddy</strong></summary>
+<summary><strong>Caddy 新增网站</strong></summary>
 
-To add a new website in Caddy, please follow these steps:
+要在 Caddy 中添加新网站，请按照以下步骤操作：
 
-#### Step 1: Edit Website Configuration File
+#### 第一步：编辑网站配置文件
 
-Add new website configuration in the `services/caddy/Caddyfile` file, for example:
+在 `services/caddy/conf/Caddyfile` 文件中添加新的网站配置，例如：
 
 ```caddy
 http://example.com {
@@ -412,40 +418,40 @@ example.com {
 }
 ```
 
-> Tip: For more configuration instructions, please refer to the official Caddy documentation [Caddy Documentation](https://caddyserver.com/docs/caddyfile)
+> 提示：更多配置说明请参考 Caddy 官方文档 [Caddy Documentation](https://caddyserver.com/docs/caddyfile)
 
-#### Step 2: Create Website Directory
+#### 第二步：创建网站目录
 
-Create the corresponding website directory in the `wwwroot` directory, for example `example.com`.
+在 `wwwroot` 目录下创建对应的网站目录，例如 `example.com`。
 
-#### Step 3: Reload
+#### 第三步：重新加载
 
 ```bash
 docker exec -w /etc/caddy caddy caddy reload
 ```
 
-#### Step 4: Test Access
+#### 第四步：测试访问
 
-Enter `https://example.com` in your browser to test if the website is accessible normally.
+在浏览器中输入 `https://example.com` 测试网站是否正常访问。
 
 </details>
 
 <details>
-<summary><strong>Caddy Automatic SSL Certificate Configuration</strong></summary>
+<summary><strong>Caddy 自动配置 SSL 证书</strong></summary>
 
-To automatically configure SSL certificates in Caddy, please follow these steps:
+要在 Caddy 中自动配置 SSL 证书，请按照以下步骤操作：
 
-#### Step 1: Add Domain Configuration
+#### 第一步：添加域名配置
 
-Add configuration in the specified domain in the `services/caddy/Caddyfile` file. If you have manually configured certificates, you need to change the `tls` section to the following:
+在 `services/caddy/conf/Caddyfile` 文件指定域名中添加配置，如果已经手动配置了证书，需要将 `tls` 部分改为以下内容：
 
 ```caddy
 example.com {
     ...
-    # Manual certificate configuration (if certificates are already configured, this line needs to be commented out)
+    # 手动配置证书（如果已配置证书，需要将这行注释掉）
     # tls /config/ssl/example.com.pem /config/ssl/example.com.pem
 
-    # Automatic certificate configuration (using Tencent Cloud DNS as example)
+    # 自动配置证书（以腾讯云 DNS 为例）
     tls {
         dns tencentcloud {
             secret_id <TENCENTCLOUD_SECRET_ID>
@@ -456,7 +462,7 @@ example.com {
 }
 ```
 
-Monolith's Caddy image compiles the following DNS modules:
+Monolith 的 Caddy 镜像编译了以下 DNS 模块：
 
 - `dns.providers.tencentcloud`
 - `dns.providers.alidns`
@@ -465,16 +471,16 @@ Monolith's Caddy image compiles the following DNS modules:
 - `dns.providers.godaddy`
 - `dns.providers.digitalocean`
 
-You can choose different DNS providers according to actual conditions. Here are configuration examples for various providers:
+可以根据实际情况选择不同的 DNS 提供商，以下是各个供应商的配置示例：
 
 ```caddy
-# Tencent Cloud DNS
+# 腾讯云 DNS
 dns tencentcloud {
     secret_id <TENCENTCLOUD_SECRET_ID>
     secret_key <TENCENTCLOUD_SECRET_KEY>
 }
 
-# Alibaba Cloud DNS
+# 阿里云 DNS
 dns alidns {
     access_key_id <ALIYUN_ACCESS_KEY_ID>
     access_key_secret <ALIYUN_ACCESS_KEY_SECRET>
@@ -498,39 +504,39 @@ dns godaddy {
 dns digitalocean <DIGITALOCEAN_API_TOKEN>
 ```
 
-#### Step 2: Reload
+#### 第二步：重新加载
 
 ```bash
 docker exec -w /etc/caddy caddy caddy reload
 ```
 
-#### Step 3: Test Access
+#### 第三步：测试访问
 
-Enter `https://example.com` in your browser to test if the website is accessible normally.
+在浏览器中输入 `https://example.com` 测试网站是否正常访问。
 
 </details>
 
 <details>
-<summary><strong>Using Google Trust Services to Issue Certificates in Caddy</strong></summary>
+<summary><strong>Caddy 使用 Google Trust Services 签发证书</strong></summary>
 
-To use Google Trust Services to issue certificates, please follow these steps:
+要使用 Google Trust Services 签发证书，请按照以下步骤操作：
 
-#### Step 1: Obtain EAB Keys
+#### 第一步：获取 EAB 密钥
 
-Obtain EAB keys through Google Cloud Shell by executing the following command:
+通过 Google Cloud Shell 获取 EAB 密钥，执行以下命令：
 
 ```bash
 gcloud publicca external-account-keys create
 ```
 
-> Tip: The EAB keys need to be used within 7 days after obtaining them. If not used within 7 days, the keys will expire. However, ACME accounts registered with EAB keys have no expiration time.
+> 提示：在获得 EAB 密钥后的 7 天内需要使用该密钥，如果 7 天内未使用密钥将会过期。但使用 EAB 密钥注册的 ACME 账号没有到期时间。
 
-#### Step 2: Add EAB Keys to Caddyfile
+#### 第二步：添加 EAB 密钥到 Caddyfile
 
-Uncomment and add the obtained EAB key configuration in the `Global Configuration` section of the `services/caddy/Caddyfile` file, for example:
+在 `services/caddy/conf/Caddyfile` 文件中的 `全局配置` 中取消注释并添加获取到的 EAB 密钥配置，例如：
 
 ```caddy
-# Use Google Trust Services to issue certificates (optional)
+# 使用 Google Trust Services 签发证书（选配）
 acme_ca https://dv.acme-v02.api.pki.goog/directory
 acme_eab {
     key_id XXXXXXXXXXXXXXXXX
@@ -538,90 +544,90 @@ acme_eab {
 }
 ```
 
-#### Step 3: Reload
+#### 第三步：重新加载
 
 ```bash
 docker exec -w /etc/caddy caddy caddy reload
 ```
 
-#### Step 4: Test Access
+#### 第四步：测试访问
 
-Enter `https://example.com` in your browser to test if the website is accessible normally and check the certificate issuer.
+在浏览器中输入 `https://example.com` 测试网站是否正常访问并查看证书颁发者。
 
 </details>
 
 <details>
-<summary><strong>Installing PHP Extensions</strong></summary>
+<summary><strong>PHP 安装扩展</strong></summary>
 
-Enter the PHP container and use the `install-php-extensions` command to quickly install extensions:
+进入 PHP 容器，使用 `install-php-extensions` 命令快速安装扩展：
 
 ```bash
 docker exec -it php /bin/sh
 install-php-extensions smbclient
 ```
 
-> Tip: For supported extension list, refer to [docker-php-extension-installer](https://github.com/mlocati/docker-php-extension-installer#supported-php-extensions)
+> 提示：支持的扩展列表参考 [docker-php-extension-installer](https://github.com/mlocati/docker-php-extension-installer#supported-php-extensions)
 
 </details>
 
 <details>
-<summary><strong>Enabling PHP Slow Script Logging</strong></summary>
+<summary><strong>PHP 开启慢脚本日志</strong></summary>
 
-Modify the `services/php/www.conf` file, find the following two lines and uncomment them:
+修改 `services/php/www.conf` 文件，找到下面两行内容并取消注释：
 
 ```ini
 slowlog = /var/log/php/slowlog.log
 request_slowlog_timeout = 3
 ```
 
-> Tip: It's recommended to disable slow script logging in production environments to improve performance.
+> 提示：生产环境中建议关闭慢脚本日志，以提高性能。
 
 </details>
 
 <details>
-<summary><strong>Enabling MariaDB Slow Query Logging</strong></summary>
+<summary><strong>MariaDB 开启慢查询日志</strong></summary>
 
-Modify the `services/mariadb/mariadb.cnf` file and set the following two parameters to 1:
+修改 `services/mariadb/mariadb.cnf` 文件，将以下两个参数设置为 1：
 
 ```ini
 slow_query_log=1
 log_queries_not_using_indexes=1
 ```
 
-> Tip: It's recommended to set these parameters to 0 in production environments to improve performance.
+> 提示：生产环境建议将这些参数设置为 0，以提高性能。
 
 </details>
 
 <details>
-<summary><strong>MariaDB General Query Log Configuration</strong></summary>
+<summary><strong>MariaDB 通用查询日志配置</strong></summary>
 
-Modify the `services/mariadb/mariadb.cnf` file, find the `general_log` parameter and set it to 1:
+修改 `services/mariadb/mariadb.cnf` 文件，找到 `general_log` 参数并设置为 1：
 
 ```ini
 general_log=1
 ```
 
-> Tip: It's recommended to set these parameters to 0 in production environments to improve performance.
+> 提示：生产环境建议将这些参数设置为 0，以提高性能。
 
 </details>
 
 <details>
-<summary><strong>Setting Redis Password</strong></summary>
+<summary><strong>Redis 设置密码</strong></summary>
 
-Modify the `services/redis/redis.conf` file, find the `requirepass` parameter and set a password:
+修改 `services/redis/redis.conf` 文件，找到 `requirepass` 参数并设置密码：
 
 ```ini
 requirepass your_strong_password
 ```
 
-> Tip: Please use strong passwords and avoid using the default password `foobared`.
+> 提示：请使用强密码，避免使用默认密码 `foobared`。
 
 </details>
 
-## 🤝 Contributing
+## 🤝 参与共建
 
-We welcome all contributions. You can submit any ideas as Pull Requests or Issues.
+我们欢迎所有的贡献，你可以将任何想法作为 Pull Requests 或 Issues 提交。
 
-## 📃 License
+## 📃 开源许可
 
-The project is released under the MIT License, see the [LICENSE](https://github.com/seatonjiang/monolith/blob/main/LICENSE) file for details.
+项目基于 MIT 许可证发布，详细说明请参阅 [LICENSE](https://github.com/seatonjiang/monolith/blob/main/LICENSE) 文件。

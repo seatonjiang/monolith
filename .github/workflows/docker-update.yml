@@ -31,15 +31,15 @@ jobs:
             tags_col = 0;
           }
 
-          /^### Synced Images/ { in_table = 1; next; }
+          /^### 同步的镜像/ { in_table = 1; next; }
 
-          in_table && /^\| *Name *\|/ {
+          in_table && /^\| *镜像名称 *\|/ {
             header_found = 1;
             for (i=1; i<=NF; i++) {
               header = $i;
               gsub(/^[ \t]+|[ \t]+$/, "", header); # Trim whitespace
-              if (header == "Name") name_col = i;
-              if (header == "Tags") tags_col = i;
+              if (header == "镜像名称") name_col = i;
+              if (header == "标签") tags_col = i;
             }
             next;
           }
@@ -67,8 +67,9 @@ jobs:
             }
           }
           
-          /^###/ && in_table && !/Synced Images/ { in_table = 0; }
+          /^###/ && in_table && !/同步的镜像/ { in_table = 0; }
           ' README.md > target-image-list.txt
+          cat target-image-list.txt          
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -169,20 +170,6 @@ jobs:
 
             awk -F'|' -v img_name="$full_image_name" -v date="$today" '
               BEGIN { OFS=FS; in_table=0 }
-              /### Synced Images/ { in_table=1 }
-              in_table && /^### / && !/### Synced Images/ { in_table=0 }
-              in_table && /\|/ {
-                trimmed_col = $2;
-                gsub(/^[[:space:]]+|[[:space:]]+$/, "", trimmed_col);
-                if (trimmed_col == img_name) {
-                  $5 = " " date " ";
-                }
-              }
-              { print }
-            ' README.md > README.tmp && mv README.tmp README.md
-
-            awk -F'|' -v img_name="$full_image_name" -v date="$today" '
-              BEGIN { OFS=FS; in_table=0 }
               /### 同步的镜像/ { in_table=1 }
               in_table && /^### / && !/### 同步的镜像/ { in_table=0 }
               in_table && /\|/ {
@@ -193,17 +180,17 @@ jobs:
                 }
               }
               { print }
-            ' README.zh-Hans.md > README.tmp && mv README.tmp README.zh-Hans.md
+            ' README.md > README.tmp && mv README.tmp README.md
             
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add README.md README.zh-Hans.md
+            git add README.md
             if ! git diff --staged --quiet; then
               timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
               git commit -m "docs: update sync date for $simple_image_name"
               git push
             else
-              echo "README.md and README.zh-Hans.md have no changes, skip commit."
+              echo "README.md has no changes, skip commit."
             fi
 
           done < target-image-list.txt

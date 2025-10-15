@@ -47,7 +47,7 @@ jobs:
           
           NEW_ROWS_DATA=""
           UNIQUE_SEPARATOR="%%%"
-          TABLE_TITLE="### Synced Images"
+          TABLE_TITLE="### 同步的镜像"
 
           existing_image_info=$(awk '
             $0 == "'"${TABLE_TITLE}"'" { in_table=1; next }
@@ -165,7 +165,7 @@ jobs:
           existing_rows=$(awk '
             $0 == "'"${TABLE_TITLE}"'" { in_table=1; next }
             in_table {
-              if (/^\|/ && !/^\| :/ && !/^\| Name \| Registry \| Tags \| Sync Date \|/) { print }
+              if (/^\|/ && !/^\| :/ && !/^\| 镜像名称 \| 镜像地址 \| 标签 \| 同步日期 \|/) { print }
               if (!/^\|/ && !/^$/) { in_table=0 }
             }
           ' README.md)
@@ -220,7 +220,14 @@ jobs:
           
           formatted_new_rows=""
           if [ -n "$processed_new_rows" ]; then
-            formatted_new_rows=$(echo -e "$processed_new_rows" | sed '/^$/d' | awk -F"${UNIQUE_SEPARATOR}" '{printf("| %s | `%s` | %s | %s |\\n", $1, $2, $3, $4)}')
+            formatted_new_rows=$(echo -e "$processed_new_rows" | sed '/^$/d' | awk -F"${UNIQUE_SEPARATOR}" '{
+              img_name=$1; 
+              ghcr_registry=$2; 
+              cnb_registry="docker.cnb.cool/seatonjiang/monolith/" $1; 
+              tags=$3; 
+              date=$4; 
+              printf("| %s | `%s` <br> `%s` | %s | %s |\\n", img_name, ghcr_registry, cnb_registry, tags, date)
+            }')
           fi
           
           sorted_table_rows=$(
@@ -239,15 +246,15 @@ jobs:
           {
             echo "${TABLE_TITLE}"
             echo ""
-            echo "| Name | Registry | Tags | Sync Date |"
+            echo "| 镜像名称 | 镜像地址 | 标签 | 同步日期 |"
             echo "| :--- | :--- | :--- | :--- |"
             echo "$sorted_table_rows"
             echo ""
           } > new_table.tmp
 
-          awk '
-            BEGIN { replaced=0 }
-            $0 == "'"${TABLE_TITLE}"'" && !replaced {
+          awk -v title="${TABLE_TITLE}" '
+            BEGIN { replaced=0; skipping=0 }
+            $0 == title && !replaced {
               while ((getline line < "new_table.tmp") > 0) { print line }
               close("new_table.tmp");
               replaced=1;
@@ -255,136 +262,22 @@ jobs:
               next;
             }
             skipping {
-              if (!/^\|/ && !/^$/) { skipping=0 } else { next }
+              if (/^\|/ || /^$/) { 
+                next 
+              } else { 
+                skipping=0;
+                print;
+                next;
+              }
             }
             { print }
           ' README.md > README.tmp && mv README.tmp README.md
 
           git add README.md
-
-          echo "Updating README.zh-Hans.md..."
-
-          if [ -f "README.zh-Hans.md" ]; then
-            README_ZH_FILE="README.zh-Hans.md"
-            TABLE_TITLE_ZH="### 同步的镜像"
-            REGISTRY_PREFIX_ZH="docker.cnb.cool/seatonjiang/monolith/"
-
-            existing_rows_zh=$(awk -v title="${TABLE_TITLE_ZH}" '
-              $0 == title { in_table=1; next }
-              in_table {
-                if (/^\|/ && !/^\| :/ && !/^\| 镜像名称 \| 镜像地址 \| 标签 \| 同步日期 \|/) { print }
-                if (!/^\|/ && !/^$/) { in_table=0 }
-              }
-            ' "${README_ZH_FILE}")
-
-            NEW_ROWS_DATA_ZH=""
-            while IFS= read -r line; do
-              if [ -z "$line" ]; then continue; fi
-              img_name=$(echo "$line" | awk -F"${UNIQUE_SEPARATOR}" '{print $1}')
-              img_tags=$(echo "$line" | awk -F"${UNIQUE_SEPARATOR}" '{print $3}')
-              img_date=$(echo "$line" | awk -F"${UNIQUE_SEPARATOR}" '{print $4}')
-              
-              new_registry_zh="${REGISTRY_PREFIX_ZH}$(basename "${img_name}")"
-              
-              new_line_data_zh="${img_name}${UNIQUE_SEPARATOR}${new_registry_zh}${UNIQUE_SEPARATOR}${img_tags}${UNIQUE_SEPARATOR}${img_date}"
-              NEW_ROWS_DATA_ZH+="${new_line_data_zh}"$'\n'
-            done <<< "$NEW_ROWS_DATA"
-
-            processed_new_rows_zh=""
-            while IFS= read -r line; do
-              if [ -z "$line" ]; then continue; fi
-              
-              img_name=$(echo "$line" | awk -F"${UNIQUE_SEPARATOR}" '{print $1}')
-              img_registry=$(echo "$line" | awk -F"${UNIQUE_SEPARATOR}" '{print $2}')
-              img_tags=$(echo "$line" | awk -F"${UNIQUE_SEPARATOR}" '{print $3}')
-              img_date=$(echo "$line" | awk -F"${UNIQUE_SEPARATOR}" '{print $4}')
-              
-              found=false
-              updated_existing_rows_zh=""
-              
-              while IFS= read -r existing_line; do
-                if [ -z "$existing_line" ]; then continue; fi
-                
-                existing_name=$(echo "$existing_line" | awk -F'|' '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-                
-                if [ "$existing_name" = "$img_name" ] || [ "$existing_name" = "$(basename "$img_name")" ]; then
-                  existing_registry=$(echo "$existing_line" | awk -F'|' '{print $3}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-                  existing_tags=$(echo "$existing_line" | awk -F'|' '{print $4}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-                  
-                  merged_tags="$existing_tags"
-                  for tag in $(echo "$img_tags" | tr ',' ' '); do
-                    if [[ "$merged_tags" != *"$tag"* ]]; then
-                      if [ -z "$merged_tags" ]; then
-                        merged_tags="$tag"
-                      else
-                        merged_tags="$merged_tags,$tag"
-                      fi
-                    fi
-                  done
-                  
-                  updated_line="| $img_name | $existing_registry | $merged_tags | $img_date |"
-                  updated_existing_rows_zh+="${updated_line}"$'\n'
-                  found=true
-                else
-                  updated_existing_rows_zh+="${existing_line}"$'\n'
-                fi
-              done <<< "$existing_rows_zh"
-              
-              if [ "$found" = true ]; then
-                existing_rows_zh="$updated_existing_rows_zh"
-              else
-                processed_new_rows_zh+="$line"$'\n'
-              fi
-            done <<< "$NEW_ROWS_DATA_ZH"
-
-            formatted_new_rows_zh=""
-            if [ -n "$processed_new_rows_zh" ]; then
-              formatted_new_rows_zh=$(echo -e "$processed_new_rows_zh" | sed '/^$/d' | awk -F"${UNIQUE_SEPARATOR}" '{printf("| %s | `%s` | %s | %s |\\n", $1, $2, $3, $4)}')
-            fi
-
-            sorted_table_rows_zh=$(
-              {
-                echo "$existing_rows_zh" 
-                echo -e "$formatted_new_rows_zh"
-              } | grep -v '^$' | awk -F'|' '
-                {
-                  key = $2;
-                  gsub(/^[[:space:]]+|[[:space:]]+$/, "", key);
-                  print key "@@@" $0;
-                }
-              ' | sort -f | sed 's/^.*@@@//'
-            )
-
-            {
-              echo "${TABLE_TITLE_ZH}"
-              echo ""
-              echo "| 镜像名称 | 镜像地址 | 标签 | 同步日期 |"
-              echo "| :--- | :--- | :--- | :--- |"
-              echo "$sorted_table_rows_zh"
-              echo ""
-            } > new_table_zh.tmp
-
-            awk -v title="${TABLE_TITLE_ZH}" '
-              BEGIN { replaced=0 }
-              $0 == title && !replaced {
-                while ((getline line < "new_table_zh.tmp") > 0) { print line }
-                close("new_table_zh.tmp");
-                replaced=1;
-                skipping=1;
-                next;
-              }
-              skipping {
-                if (!/^\|/ && !/^$/) { skipping=0 } else { next }
-              }
-              { print }
-            ' "${README_ZH_FILE}" > README.tmp && mv README.tmp "${README_ZH_FILE}"
-
-            git add "${README_ZH_FILE}"
-            rm -f new_table_zh.tmp
-          fi
+          rm -f new_table.tmp
 
           if git diff --staged --quiet; then
-            echo "No changes in README files, no commit needed."
+            echo "No changes in README file, no commit needed."
           else
             git commit -m "docs: add a synced Docker image"
             git push
