@@ -78,6 +78,21 @@ docker compose up -d
 
 默认站点目录为 `wwwroot/default`，测试完成后请立即删除该目录及 `services/caddy/Caddyfile.d/monolith.caddyfile` 配置文件，避免暴露配置信息。
 
+## 📦 镜像列表
+
+### 构建的镜像
+
+| 镜像名称 | 镜像地址 | 镜像标签 | 构建时间 |
+| :--- | :--- | :--- | :--- |
+| Caddy | `ghcr.io/seatonjiang/caddy` <br> `docker.cnb.cool/seatonjiang/monolith/caddy` | alpine | |
+| PHP 8.3 | `ghcr.io/seatonjiang/php` <br> `docker.cnb.cool/seatonjiang/monolith/php` | 8.3-fpm-alpine | |
+| PHP 8.4 | `ghcr.io/seatonjiang/php` <br> `docker.cnb.cool/seatonjiang/monolith/php` | 8.4-fpm-alpine | |
+
+### 同步的镜像
+
+| 镜像名称 | 镜像地址 | 标签 | 同步日期 |
+| :--- | :--- | :--- | :--- |
+
 ## 📂 目录结构
 
 项目目录结构说明：
@@ -223,21 +238,6 @@ rename-command FLUSHALL ""    # 禁用清空所有数据库的命令
 rename-command EVAL     ""    # 禁用执行Lua脚本的命令
 rename-command FLUSHDB  ""    # 禁用清空当前数据库的命令
 ```
-
-## 📦 镜像列表
-
-### 构建的镜像
-
-| 镜像名称 | 镜像地址 | 镜像标签 | 构建时间 |
-| :--- | :--- | :--- | :--- |
-| Caddy | `ghcr.io/seatonjiang/caddy` <br> `docker.cnb.cool/seatonjiang/monolith/caddy` | alpine | |
-| PHP 8.3 | `ghcr.io/seatonjiang/php` <br> `docker.cnb.cool/seatonjiang/monolith/php` | 8.3-fpm-alpine | |
-| PHP 8.4 | `ghcr.io/seatonjiang/php` <br> `docker.cnb.cool/seatonjiang/monolith/php` | 8.4-fpm-alpine | |
-
-### 同步的镜像
-
-| 镜像名称 | 镜像地址 | 标签 | 同步日期 |
-| :--- | :--- | :--- | :--- |
 
 ## 📚 常见问题
 
