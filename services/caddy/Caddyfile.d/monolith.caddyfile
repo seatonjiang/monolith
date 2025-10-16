@@ -1,0 +1,20 @@
+:80 {
+    root * /var/www/default
+
+    header {
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        -Server
+        -Via
+    }
+
+    encode gzip
+
+    php_fastcgi php:9000 {
+        index index.php
+    }
+
+    file_server {
+        index index.php index.html
+    }
+}

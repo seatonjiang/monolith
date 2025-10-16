@@ -46,11 +46,29 @@ jobs:
           tags: |
             alpine
 
+      - name: Generate Dockerfile
+        run: |
+          mkdir -p /tmp/docker-build-caddy
+          cat > /tmp/docker-build-caddy/Dockerfile << 'EOL'
+          FROM caddy:builder-alpine AS builder
+          RUN apk update && apk --no-cache add brotli-dev
+          RUN xcaddy build \
+              --with github.com/caddy-dns/tencentcloud \
+              --with github.com/caddy-dns/alidns \
+              --with github.com/caddy-dns/route53@v1.6.0-beta.3 \
+              --with github.com/caddy-dns/cloudflare \
+              --with github.com/caddy-dns/godaddy \
+              --with github.com/caddy-dns/digitalocean
+          FROM caddy:alpine
+          COPY --from=builder /usr/bin/caddy /usr/bin/caddy
+          EOL
+          cat /tmp/docker-build-caddy/Dockerfile
+
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./.github/dockerfile/caddy
+          file: /tmp/docker-build-caddy/Dockerfile
           platforms: linux/amd64,linux/arm64/v8,linux/arm/v7
           push: true
           tags: ${{ steps.meta.outputs.tags }}

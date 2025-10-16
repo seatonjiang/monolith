@@ -1,0 +1,21 @@
+# 全局配置
+{
+	# 调试模式
+	# debug
+
+	# 禁止 HTTP 到 HTTPS 重定向
+	auto_https disable_redirects
+
+	# 跳过自动安装根证书到系统信任存储
+	skip_install_trust
+
+	# 使用 Google Trust Services 签发证书
+	# acme_ca https://dv.acme-v02.api.pki.goog/directory
+	# acme_eab {
+	#     key_id <key_id>
+	#     mac_key <mac_key>
+	# }
+}
+
+# 导入所有网站配置文件
+import Caddyfile.d/*.caddyfile

@@ -1,6 +1,6 @@
 # Monolith
 
-基于 Docker 轻松构建 PHP 生产环境，集成了 OpenResty、Caddy、PHP、MariaDB、Redis、Memcached 等常用服务。
+基于 Docker 轻松构建现代 PHP 应用服务器，集成了 Caddy、PHP、MariaDB、Redis、Memcached 等服务。
 
 ## 🚀 快速入门
 
@@ -24,7 +24,7 @@ git clone --depth 1 https://cnb.cool/seatonjiang/monolith.git
 cd monolith/
 ```
 
-重命名环境配置文件（如果不执行此命令，将使用默认配置）：
+重命名环境配置文件：
 
 ```bash
 cp env.example .env
@@ -69,18 +69,14 @@ PHPMYADMIN_WEB_PORT=28080
 docker compose up -d
 ```
 
-> 提示：默认使用 OpenResty 作为 Web 服务器，如需使用 Caddy 作为 Web 服务器，请修改 `compose.yaml` 中的相关配置。  
-
 ### 第五步：网站浏览
 
-- **本地环境**：`http://localhost`
-- **线上环境**：`http://服务器 IP 地址`
+- **本地环境**：`http://127.0.0.1`
+- **线上环境**：`http://<服务器 IP 地址>`
 
 ### 第六步：安全清理
 
-- 默认站点目录为 `wwwroot/default`，测试完成后请立即删除该目录及对应配置，避免暴露默认页面。  
-- 若使用 OpenResty 作为 Web 服务器，编辑 `services/openresty/conf.d/default.conf` 文件，删除测试环境配置并编写生产环境配置。  
-- 若使用 Caddy 作为 Web 服务器，编辑 `services/caddy/conf/Caddyfile` 文件，删除测试环境配置并编写生产环境配置。
+默认站点目录为 `wwwroot/default`，测试完成后请立即删除该目录及 `services/caddy/Caddyfile.d/monolith.caddyfile` 配置文件，避免暴露配置信息。
 
 ## 📂 目录结构
 
@@ -95,7 +91,6 @@ monolith
 ├── logs                            日志存储目录
 │   ├── caddy                       Caddy 日志目录
 │   ├── mariadb                     MariaDB 日志目录
-│   ├── openresty                   OpenResty 日志目录
 │   ├── php                         PHP 日志目录
 │   └── redis                       Redis 日志目录
 ├── secrets                         密钥配置目录
@@ -106,7 +101,6 @@ monolith
 │   ├── caddy                       Caddy 配置目录
 │   ├── mariadb                     MariaDB 配置目录
 │   ├── memcached                   Memcached 配置目录
-│   ├── openresty                   OpenResty 配置目录
 │   ├── phpmyadmin                  phpMyAdmin 配置目录
 │   ├── php                         PHP 配置目录
 │   └── redis                       Redis 配置目录
@@ -124,8 +118,8 @@ monolith
 # 构建并后台运行全部容器
 docker compose up -d
 
-# 构建并后台运行指定容器（不运行 Caddy 和 phpMyAdmin）
-docker compose up -d openresty php mariadb redis memcached
+# 构建并后台运行指定容器（不运行 phpMyAdmin 容器）
+docker compose up -d caddy php mariadb redis memcached
 
 # 停止全部容器并移除网络
 docker compose down
@@ -144,9 +138,6 @@ docker compose build php            # 重新构建服务
 ```bash
 # 进入运行中的 PHP 容器
 docker exec -it php /bin/sh
-
-# 进入运行中的 OpenResty 容器
-docker exec -it openresty /bin/sh
 
 # 进入运行中的 Caddy 容器
 docker exec -it caddy /bin/sh
@@ -239,96 +230,16 @@ rename-command FLUSHDB  ""    # 禁用清空当前数据库的命令
 
 | 镜像名称 | 镜像地址 | 镜像标签 | 构建时间 |
 | :--- | :--- | :--- | :--- |
-| PHP 8.3 | `ghcr.io/seatonjiang/php` <br> `docker.cnb.cool/seatonjiang/monolith/php` | 8.3-fpm-alpine | 2025-10-13 |
-| PHP 8.4 | `ghcr.io/seatonjiang/php` <br> `docker.cnb.cool/seatonjiang/monolith/php` | 8.4-fpm-alpine | 2025-10-13 |
-| OpenResty | `ghcr.io/seatonjiang/openresty` <br> `docker.cnb.cool/seatonjiang/monolith/openresty` | alpine | 2025-10-06 |
-| Caddy | `ghcr.io/seatonjiang/caddy` <br> `docker.cnb.cool/seatonjiang/monolith/caddy` | alpine | 2025-10-14 |
+| Caddy | `ghcr.io/seatonjiang/caddy` <br> `docker.cnb.cool/seatonjiang/monolith/caddy` | alpine | |
+| PHP 8.3 | `ghcr.io/seatonjiang/php` <br> `docker.cnb.cool/seatonjiang/monolith/php` | 8.3-fpm-alpine | |
+| PHP 8.4 | `ghcr.io/seatonjiang/php` <br> `docker.cnb.cool/seatonjiang/monolith/php` | 8.4-fpm-alpine | |
 
 ### 同步的镜像
 
 | 镜像名称 | 镜像地址 | 标签 | 同步日期 |
 | :--- | :--- | :--- | :--- |
-| mariadb | `ghcr.io/seatonjiang/mariadb` <br> `docker.cnb.cool/seatonjiang/monolith/mariadb` | 11.8 | 2025-10-11 |
-| memcached | `ghcr.io/seatonjiang/memcached` <br> `docker.cnb.cool/seatonjiang/monolith/memcached` | 1.6-alpine | 2025-10-09 |
-| phpmyadmin | `ghcr.io/seatonjiang/phpmyadmin` <br> `docker.cnb.cool/seatonjiang/monolith/phpmyadmin` | 5.2 | 2025-10-09 |
-| redis | `ghcr.io/seatonjiang/redis` <br> `docker.cnb.cool/seatonjiang/monolith/redis` | 8.2-alpine | 2025-10-12 |
 
 ## 📚 常见问题
-
-<details>
-
-<summary><strong>OpenResty 新增网站</strong></summary>
-
-要在 OpenResty 中添加新网站，请按照以下步骤操作：
-
-#### 第一步：创建网站配置文件
-
-在 `services/openresty/conf.d/` 目录下创建新的配置文件，例如 `example.com.conf`：
-
-```nginx
-server {
-    listen 80 reuseport;
-    listen [::]:80 reuseport;
-
-    server_name example.com;
-
-    location / {
-        return 301 https://example.com$request_uri;
-    }
-}
-
-server {
-    listen 443 ssl reuseport;
-    listen [::]:443 ssl reuseport;
-    http2 on;
-
-    server_name example.com;
-    root /var/www/example.com;
-    index index.html index.php;
-
-    ssl_certificate /etc/nginx/ssl/example.com.crt;
-    ssl_certificate_key /etc/nginx/ssl/example.com.key;
-
-    access_log /var/log/nginx/example.com.access.log combined buffer=1m flush=5m;
-    error_log /var/log/nginx/example.com.error.log warn;
-
-    location / {
-        try_files $uri $uri/ /index.php?$query_string;
-    }
-
-    location ~ [^/]\.php(/|$) {
-        fastcgi_pass php:9000;
-        include fastcgi.conf;
-        include fastcgi-php.conf;
-    }
-
-    include /etc/nginx/rewrite/general.conf;
-    include /etc/nginx/rewrite/security.conf;
-    include /etc/nginx/rewrite/wordpress.conf;
-}
-```
-
-#### 第二步：创建网站目录
-
-在 `wwwroot` 目录下创建对应的网站目录，例如 `example.com`。
-
-#### 第三步：配置 SSL 证书
-
-将 SSL 证书放置在 `services/openresty/ssl/` 目录下，证书文件名称为 `example.com.crt`，私钥文件名称为 `example.com.key`。
-
-#### 第四步：重新加载 OpenResty 配置
-
-```bash
-docker exec -it openresty nginx -s reload
-```
-
-> 提示：可以参考 `services/openresty/conf.d/` 目录下的 `example.com.conf.example` 示例文件来创建新的网站配置。
-
-#### 第五步：测试访问
-
-在浏览器中输入 `https://example.com` 测试网站是否正常访问。
-
-</details>
 
 <details>
 <summary><strong>Caddy 新增网站</strong></summary>
@@ -337,9 +248,9 @@ docker exec -it openresty nginx -s reload
 
 #### 第一步：编辑网站配置文件
 
-在 `services/caddy/conf/Caddyfile` 文件中添加新的网站配置，例如：
+在 `services/caddy/Caddyfile.d/` 目录添加新的网站配置文件，例如 `example.com.caddyfile`，并在文件中添加新的网站配置，例如：
 
-```caddy
+```caddyfile
 http://example.com {
     redir https://example.com{uri} permanent
         header {
@@ -373,7 +284,7 @@ example.com {
         -Via
     }
 
-    tls /config/ssl/example.com.pem /config/ssl/example.com.pem
+    tls /etc/caddy/ssl/example.com.pem /etc/caddy/ssl/example.com.pem
 
     encode {
         gzip 6
@@ -418,7 +329,7 @@ example.com {
 }
 ```
 
-> 提示：更多配置说明请参考 Caddy 官方文档 [Caddy Documentation](https://caddyserver.com/docs/caddyfile)
+> 提示：更多配置说明可以参考 [Caddy 官方文档](https://caddyserver.com/docs/caddyfile)
 
 #### 第二步：创建网站目录
 
@@ -439,17 +350,17 @@ docker exec -w /etc/caddy caddy caddy reload
 <details>
 <summary><strong>Caddy 自动配置 SSL 证书</strong></summary>
 
-要在 Caddy 中自动配置 SSL 证书，请按照以下步骤操作：
+要在 Caddy 中自动配置 SSL 证书（以 `example.com` 域名为例），请按照以下步骤操作：
 
-#### 第一步：添加域名配置
+#### 第一步：添加证书配置
 
-在 `services/caddy/conf/Caddyfile` 文件指定域名中添加配置，如果已经手动配置了证书，需要将 `tls` 部分改为以下内容：
+在 `services/caddy/Caddyfile.d/example.com.caddyfile` 文件中添加证书配置，如果已经手动配置了证书，需要将 `tls` 部分改为以下内容：
 
-```caddy
+```caddyfile
 example.com {
     ...
     # 手动配置证书（如果已配置证书，需要将这行注释掉）
-    # tls /config/ssl/example.com.pem /config/ssl/example.com.pem
+    # tls /etc/caddy/ssl/example.com.pem /etc/caddy/ssl/example.com.pem
 
     # 自动配置证书（以腾讯云 DNS 为例）
     tls {
@@ -473,7 +384,7 @@ Monolith 的 Caddy 镜像编译了以下 DNS 模块：
 
 可以根据实际情况选择不同的 DNS 提供商，以下是各个供应商的配置示例：
 
-```caddy
+```caddyfile
 # 腾讯云 DNS
 dns tencentcloud {
     secret_id <TENCENTCLOUD_SECRET_ID>
@@ -523,7 +434,7 @@ docker exec -w /etc/caddy caddy caddy reload
 
 #### 第一步：获取 EAB 密钥
 
-通过 Google Cloud Shell 获取 EAB 密钥，执行以下命令：
+通过 [Google Cloud Shell](https://console.cloud.google.com/welcome) 获取 EAB 密钥，执行以下命令：
 
 ```bash
 gcloud publicca external-account-keys create
@@ -533,14 +444,14 @@ gcloud publicca external-account-keys create
 
 #### 第二步：添加 EAB 密钥到 Caddyfile
 
-在 `services/caddy/conf/Caddyfile` 文件中的 `全局配置` 中取消注释并添加获取到的 EAB 密钥配置，例如：
+在 `services/caddy/Caddyfile` 文件中取消注释并添加获取到的 EAB 密钥配置，例如：
 
-```caddy
-# 使用 Google Trust Services 签发证书（选配）
+```caddyfile
+# 使用 Google Trust Services 签发证书
 acme_ca https://dv.acme-v02.api.pki.goog/directory
 acme_eab {
-    key_id XXXXXXXXXXXXXXXXX
-    mac_key XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    key_id cea2c36a8r7eae1009df9688ed320315
+    mac_key xE3fSdsfDS32rfds2KMq0zyGFfd34T3crvyYe-q1CLLsV0w-U7Dimy0fdsaf0Qt0lwYgwfnWOWyqYz
 }
 ```
 
@@ -624,9 +535,13 @@ requirepass your_strong_password
 
 </details>
 
+## 💖 支持项目
+
+如果这个项目对你有帮助，请考虑支持一下我的工作，让我可以持续的维护和改进它。你的支持是我继续开发的动力！你可以在 [爱发电](https://afdian.com/a/seatonjiang) 页面支持我。
+
 ## 🤝 参与共建
 
-我们欢迎所有的贡献，你可以将任何想法作为 Pull Requests 或 Issues 提交。
+我们欢迎所有的贡献，你可以将任何想法作为 [Pull Requests](https://github.com/seatonjiang/monolith/pulls) 或 [Issues](https://github.com/seatonjiang/monolith/issues) 提交。
 
 ## 📃 开源许可
 

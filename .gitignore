@@ -1,12 +1,18 @@
-# Visual Studio Code
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-!.vscode/*.code-snippets
-.history/
-.ionide
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
 
 # macOS
 .DS_Store
@@ -22,35 +28,21 @@ Icon
 .VolumeIcon.icns
 .com.apple.timemachine.donotpresent
 
-# Windows
-Thumbs.db
-Thumbs.db:encryptable
-ehthumbs.db
-ehthumbs_vista.db
-*.stackdump
-[Dd]esktop.ini
-$RECYCLE.BIN/
-
-# Linux
-*~
-.fuse_hidden*
-.directory
-.Trash-*
-.nfs*
-
 # 数据目录
-/data/caddy/*
-/data/mariadb/*
-/data/redis/*
+/data/*
 !data/*/.gitkeep
 
 # 日志目录
-/logs/openresty/*
-/logs/caddy/*
-/logs/php/*
-/logs/mariadb/*
-/logs/redis/*
+/logs/*
 !logs/*/.gitkeep
+
+# SSL 证书
+/services/caddy/ssl/*
+!services/caddy/ssl/.gitkeep
+
+# Caddy 配置文件
+/services/caddy/Caddyfile.d/*
+!services/caddy/Caddyfile.d/monolith.caddyfile
 
 # 网站目录
 /wwwroot/*
@@ -58,9 +50,3 @@ $RECYCLE.BIN/
 
 # 环境文件
 .env
-
-# SSL 证书
-/services/openresty/ssl/*
-!services/openresty/ssl/.gitkeep
-/services/caddy/ssl/*
-!services/caddy/ssl/.gitkeep
