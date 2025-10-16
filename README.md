@@ -535,11 +535,9 @@ requirepass your_strong_password
 
 </details>
 
-## 💖 支持项目
+## 💖 项目支持
 
-如果这个项目为你的开发工作带来了便利，请考虑为这个项目点个 Star 或者通过 [爱发电](https://afdian.com/a/seatonjiang) 支持我！
-
-你的每一份支持都是我持续优化和添加新功能的动力源泉，让我们一起打造更好的开发体验！
+如果这个项目为你带来了便利，请考虑为这个项目点个 Star 或者通过 [爱发电](https://afdian.com/a/seatonjiang) 支持我，你的每一份支持都是我持续优化和添加新功能的动力源泉！
 
 ## 🤝 参与共建
 
