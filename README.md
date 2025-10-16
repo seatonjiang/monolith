@@ -56,7 +56,7 @@ PHPMYADMIN_WEB_PORT=28080
 修改 `secrets` 目录中的配置文件：
 
 - `mariadb-root-pwd`：MariaDB 管理员密码（账号为 `root`）
-- `mariadb-user-name`：MariaDB 用户名称（默认为 `user`）
+- `mariadb-user-name`：MariaDB 用户名称（默认为 `monolith`）
 - `mariadb-user-pwd`：MariaDB 用户密码
 
 > 提示：在生产环境中，请务必修改默认密码，并确保使用强密码，使用用户级权限进行访问。
