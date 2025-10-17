@@ -2,7 +2,7 @@ name: "构建 Caddy 镜像"
 
 on:
   schedule:
-    - cron: "24 2 * * 1"
+    - cron: "0 2 * * 1"
   workflow_dispatch:
 
 jobs:
@@ -64,14 +64,14 @@ jobs:
           EOL
           cat /tmp/docker-build-caddy/Dockerfile
 
-      # - name: 构建并推送镜像
-      #   uses: docker/build-push-action@v6
-      #   with:
-      #     context: .
-      #     file: /tmp/docker-build-caddy/Dockerfile
-      #     platforms: linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8,linux/ppc64le,linux/riscv64,linux/s390x
-      #     push: true
-      #     tags: ${{ steps.meta.outputs.tags }}
+      - name: 构建并推送镜像
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: /tmp/docker-build-caddy/Dockerfile
+          platforms: linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8,linux/ppc64le,linux/riscv64,linux/s390x
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
 
       - name: 更新 README 文件
         run: |
