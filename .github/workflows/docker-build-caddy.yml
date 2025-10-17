@@ -75,7 +75,10 @@ jobs:
 
       - name: 更新 README 文件
         run: |
-          git pull
+          # git config user.name "seatonjiang"
+          # git config user.email "hi@seatonjiang.com"
+          git pull --rebase
+
           IMAGE_NAME="Caddy"
           BUILD_TIME=$(TZ='Asia/Shanghai' date '+%Y-%m-%d')
           README_FILE="README.md"
@@ -107,6 +110,5 @@ jobs:
             echo "README 文件未发生变化，无需提交"
           else
             git commit -m "docs: 更新 $IMAGE_NAME 镜像的构建记录"
-            git push
             git push --quiet "https://${{ secrets.ACCESS_TOKEN }}@github.com/seatonjiang/monolith.git"
           fi
