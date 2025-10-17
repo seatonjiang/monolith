@@ -1,4 +1,4 @@
-name: "构建 Caddy 镜像"
+name: "构建 Caddy Alpine 镜像"
 
 on:
   schedule:
