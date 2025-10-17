@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build_and_push:
+  build_caddy_image:
     runs-on: ubuntu-latest
     permissions:
       contents: write
