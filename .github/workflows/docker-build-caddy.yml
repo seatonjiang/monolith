@@ -13,30 +13,30 @@ jobs:
       packages: write
 
     steps:
-      - name: Checkout Code
+      - name: 拉取代码
         uses: actions/checkout@v4
 
-      - name: Set up QEMU
+      - name: 设置 QEMU 多架构支持
         uses: docker/setup-qemu-action@v3
 
-      - name: Set up Docker Buildx
+      - name: 设置 Docker Buildx 构建器
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to GHCR
+      - name: 登录 GHCR 制品库
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: seatonjiang
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Login to CNB
+      - name: 登录 CNB 制品库
         uses: docker/login-action@v3
         with:
           registry: docker.cnb.cool
           username: cnb
           password: ${{ secrets.CNB_DOCKER_TOKEN }}
 
-      - name: Docker meta
+      - name: 生成镜像元数据
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -46,7 +46,7 @@ jobs:
           tags: |
             alpine
 
-      - name: Generate Dockerfile
+      - name: 生成 Dockerfile
         run: |
           mkdir -p /tmp/docker-build-caddy
           cat > /tmp/docker-build-caddy/Dockerfile << 'EOL'
@@ -64,7 +64,7 @@ jobs:
           EOL
           cat /tmp/docker-build-caddy/Dockerfile
 
-      - name: Build and push
+      - name: 构建并推送镜像
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -73,18 +73,13 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
 
-      - name: Update build record
+      - name: 更新 README 文件
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git pull --rebase
-
           IMAGE_NAME="Caddy"
           BUILD_TIME=$(TZ='Asia/Shanghai' date '+%Y-%m-%d')
           README_FILE="README.md"
           TEMP_README="README.tmp"
 
-          # Update README
           if grep -qF "$IMAGE_NAME" "$README_FILE"; then
             echo "Updating build date in README: $IMAGE_NAME"
 
@@ -109,8 +104,8 @@ jobs:
 
           git add "$README_FILE"
           if git diff --staged --quiet; then
-            echo "No changes in README file, no commit needed."
+            echo "README 文件未发生变化，无需提交"
           else
-            git commit -m "docs: update build record for image"
+            git commit -m "docs: 更新 $IMAGE_NAME 镜像的构建记录"
             git push
           fi
