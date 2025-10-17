@@ -6,11 +6,11 @@ on:
   workflow_run:
     workflows:
       [
-        "Build PHP 8.3 Image",
-        "Build PHP 8.4 Image",
+        "构建 PHP 8.3 镜像",
+        "构建 PHP 8.4 镜像",
         "构建 Caddy 镜像",
-        "Sync Docker Image",
-        "Update Docker Image",
+        "同步 Docker 镜像",
+        "更新 Docker 镜像",
       ]
     types:
       - completed

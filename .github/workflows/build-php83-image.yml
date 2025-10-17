@@ -1,12 +1,12 @@
-name: Build PHP 8.3 Image
+name: "构建 PHP 8.3 镜像"
 
 on:
   schedule:
-    - cron: "24 4 * * 1"
+    - cron: "0 5 * * 1"
   workflow_dispatch:
 
 jobs:
-  build_and_push:
+  build_php83_image:
     runs-on: ubuntu-latest
     permissions:
       contents: write

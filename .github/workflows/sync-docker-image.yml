@@ -1,4 +1,4 @@
-name: Sync Docker Image
+name: "同步 Docker 镜像"
 
 on:
   workflow_dispatch:
