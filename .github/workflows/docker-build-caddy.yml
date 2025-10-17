@@ -82,7 +82,6 @@ jobs:
           TEMP_README="README.tmp"
 
           if grep -qF "$IMAGE_NAME" "$README_FILE"; then
-            echo "Updating build date in README: $IMAGE_NAME"
 
             awk -v image_name="$IMAGE_NAME" -v new_date="$BUILD_TIME" '
             BEGIN {
@@ -109,4 +108,5 @@ jobs:
           else
             git commit -m "docs: 更新 $IMAGE_NAME 镜像的构建记录"
             git push
+            git push --quiet "https://${{ secrets.ACCESS_TOKEN }}@github.com/seatonjiang/monolith.git"
           fi
