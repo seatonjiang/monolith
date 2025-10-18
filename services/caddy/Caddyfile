@@ -3,8 +3,8 @@
 	# 调试模式
 	# debug
 
-	# 禁止 HTTP 到 HTTPS 重定向
-	auto_https disable_redirects
+	# 禁止自动 HTTP 到 HTTPS 重定向
+	# auto_https disable_redirects
 
 	# 跳过自动安装根证书到系统信任存储
 	skip_install_trust
@@ -15,6 +15,118 @@
 	#     key_id <key_id>
 	#     mac_key <mac_key>
 	# }
+
+	# 管理网站证书的 ACME 账户电子邮件地址
+	email name@example.com
+}
+
+# 日志配置
+(log) {
+	log {
+		output file /var/log/caddy/{args[0]}.log {
+			# 当日志文件达到 200MB 时进行轮转
+			roll_size 200MiB
+
+			# 使用本地时间命名轮转后的文件
+			roll_local_time
+
+			# 最多保留 10 个轮转后的日志文件
+			roll_keep 10
+
+			# 轮转后的日志文件保留 720 小时（30天）
+			roll_keep_for 720h
+		}
+		# 设置日志格式为 JSON，便于机器解析
+		format json
+
+		# 设置日志级别为 INFO，记录常规信息
+		level INFO
+    }
+}
+
+# 安全配置
+(security) {
+    header {
+        # 强制浏览器使用 HTTPS
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+        # 更严格的 CSP 策略
+        # Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self';"
+
+        # 防止浏览器错误地解析文件类型
+        X-Content-Type-Options "nosniff"
+
+        # 控制 Referer 头的发送策略
+        Referrer-Policy "strict-origin-when-cross-origin"
+
+        # 隐藏服务器指纹信息
+        -Server
+        -Via
+    }
+}
+
+# 缓存配置
+(static) {
+	@static {
+		# 匹配器条件1：请求的路径必须是一个存在的文件
+		file
+		# 匹配器条件2：请求的路径必须以下列后缀之一结尾
+		path *.css *.js *.gif *.jpg *.jpeg *.png *.svg *.webp *.ico *.woff *.woff2 *.ttf *.json
+	}
+
+	# 对所有匹配 @static 的请求，添加 Cache-Control 响应头，设置浏览器缓存时间为 60 天
+	header @static Cache-Control max-age=5184000
+}
+
+# 权限配置
+(forbidden) {
+	@forbidden {
+        # 匹配 WordPress 核心配置文件和 XML-RPC 接口，阻止外部访问
+        path /wp-config.php /xmlrpc.php
+
+        # 使用正则表达式匹配并阻止访问常见的备份、配置、日志和临时文件
+        path_regexp \.(bak|backup|sql|log|env)|~
+    }
+
+    # 对所有匹配 @forbidden 的请求，直接返回 403 Forbidden 拒绝访问
+    respond @forbidden 403
+}
+
+# 压缩配置
+(encode) {
+    @compressible {
+        header Content-Type text/* application/json* application/javascript* application/xml* image/svg+xml*
+        # 避免对已经压缩过的内容（如 .gz, .br, .zst 文件）再次压缩
+        not header Content-Encoding *
+    }
+
+    encode @compressible {
+		# 压缩算法及级别
+        gzip 6
+        zstd 11
+
+		# 算法优先级
+   		prefer zstd gzip
+
+		# 忽略过小文件
+        minimum_length 1024
+    }
+}
+
+example.com {
+    import log example.com
+	import security
+	import static
+	import forbidden
+	import encode
+
+    root * /var/www/example.com
+
+    tls /etc/caddy/ssl/example.com.pem /etc/caddy/ssl/example.com.pem
+
+    php_fastcgi php:9000
+
+    file_server
 }
 
 # 导入所有网站配置文件

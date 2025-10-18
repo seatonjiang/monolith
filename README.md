@@ -247,85 +247,21 @@ rename-command FLUSHDB  ""    # 禁用清空当前数据库的命令
 
 #### 第一步：编辑网站配置文件
 
+在 `services/caddy/Caddyfile` 文件中填写邮箱地址，例如：
+
+```caddyfile
+{
+    ...
+    # 管理网站证书的 ACME 账户电子邮件地址
+    email name@example.com
+    ...
+}
+```
+
 在 `services/caddy/Caddyfile.d/` 目录添加新的网站配置文件，例如 `example.com.caddyfile`，并在文件中添加新的网站配置，例如：
 
 ```caddyfile
-http://example.com {
-    redir https://example.com{uri} permanent
-        header {
-        -Server
-        -Via
-    }
-}
-
-example.com {
-    log {
-        output file /var/log/caddy/example.com.log {
-            roll_size 100mb
-            roll_keep 5
-            roll_keep_for 720h
-        }
-        format json
-        level WARN
-    }
-
-    root * /var/www/example.com
-
-    header {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'"
-        X-Frame-Options "SAMEORIGIN"
-        X-XSS-Protection "1; mode=block"
-        X-Content-Type-Options "nosniff"
-        Referrer-Policy "strict-origin-when-cross-origin"
-        Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
-        -Server
-        -Via
-    }
-
-    tls /etc/caddy/ssl/example.com.pem /etc/caddy/ssl/example.com.pem
-
-    encode {
-        gzip 6
-        zstd
-        minimum_length 1024
-        match {
-            header Content-Type text/*
-            header Content-Type application/json*
-            header Content-Type application/javascript*
-            header Content-Type application/xml*
-            header Content-Type image/svg+xml*
-        }
-    }
-
-    @static {
-        file
-        path *.css *.js *.png *.jpg *.jpeg *.gif *.ico *.svg *.woff *.woff2 *.ttf *.eot *.webp
-    }
-    header @static {
-        Cache-Control "public, max-age=31536000, immutable"
-        Vary "Accept-Encoding"
-    }
-
-    @forbidden {
-        path /.* /composer.* /package.* *.log *.bak *.backup *.sql *.env*
-    }
-    respond @forbidden 403
-
-    php_fastcgi php:9000 {
-        env PHP_ADMIN_VALUE "open_basedir=/var/www/example.com:/tmp"
-        env PHP_ADMIN_VALUE "disable_functions=exec,passthru,shell_exec,system,proc_open,popen,curl_exec,curl_multi_exec,parse_ini_file,show_source"
-        read_timeout 30s
-        write_timeout 30s
-        dial_timeout 3s
-        index index.php
-    }
-
-    file_server {
-        hide .htaccess .env .git .gitignore composer.json composer.lock package.json
-        index index.php index.html index.htm
-    }
-}
+test
 ```
 
 > 提示：更多配置说明可以参考 [Caddy 官方文档](https://caddyserver.com/docs/caddyfile)
