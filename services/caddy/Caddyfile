@@ -15,9 +15,6 @@
 	#     key_id <key_id>
 	#     mac_key <mac_key>
 	# }
-
-	# 管理网站证书的 ACME 账户电子邮件地址
-	email name@example.com
 }
 
 # 日志配置
@@ -44,8 +41,8 @@
     }
 }
 
-# 安全配置
-(security) {
+# 安全响应头配置
+(security_headers) {
     header {
         # 强制浏览器使用 HTTPS
         Strict-Transport-Security "max-age=31536000; includeSubDomains"
@@ -67,66 +64,70 @@
 
 # 缓存配置
 (static) {
-	@static {
-		# 匹配器条件1：请求的路径必须是一个存在的文件
-		file
-		# 匹配器条件2：请求的路径必须以下列后缀之一结尾
-		path *.css *.js *.gif *.jpg *.jpeg *.png *.svg *.webp *.ico *.woff *.woff2 *.ttf *.json
+	# 长期缓存：图片、字体、媒体文件（相对稳定）
+	@long_cache {
+		path *.gif *.jpg *.jpeg *.png *.svg *.webp *.avif *.ico *.bmp *.tiff
+		path *.woff *.woff2 *.ttf *.otf *.eot
+		path *.mp3 *.mp4 *.webm *.ogg *.wav *.m4a
+		path *.pdf *.zip *.tar *.gz
 	}
 
-	# 对所有匹配 @static 的请求，添加 Cache-Control 响应头，设置浏览器缓存时间为 60 天
-	header @static Cache-Control max-age=5184000
+	# 中期缓存：CSS/JS（可能有版本控制）
+	@medium_cache {
+		path *.css *.js *.mjs
+	}
+
+	# 短期缓存：配置和数据文件
+	@short_cache {
+		path *.json *.xml *.txt *.csv *.map
+		path *.manifest *.webmanifest
+		path *.yaml *.yml
+	}
+
+	# 长期缓存：6个月，适用于相对稳定的资源
+	header @long_cache Cache-Control "public, max-age=15552000"
+
+	# 中期缓存：7天，适用于CSS/JS
+	header @medium_cache Cache-Control "public, max-age=604800"
+
+	# 短期缓存：1天，适用于配置文件
+	header @short_cache Cache-Control "public, max-age=86400"
 }
 
-# 权限配置
-(forbidden) {
+# 安全防护配置
+(security) {
 	@forbidden {
-        # 匹配 WordPress 核心配置文件和 XML-RPC 接口，阻止外部访问
-        path /wp-config.php /xmlrpc.php
+		# 高风险配置文件
+		path /.env /config.php /wp-config.php
 
-        # 使用正则表达式匹配并阻止访问常见的备份、配置、日志和临时文件
-        path_regexp \.(bak|backup|sql|log|env)|~
-    }
+		# 版本控制目录
+		path /.git/* /.svn/*
 
-    # 对所有匹配 @forbidden 的请求，直接返回 403 Forbidden 拒绝访问
-    respond @forbidden 403
+		# 常见攻击目标
+		path /xmlrpc.php /phpinfo.php /adminer.php
+		path /phpmyadmin/* /pma/*
+
+		# 备份和敏感文件
+		path_regexp sensitive \.(bak|backup|sql|log|env|tmp|swp)$|~$|\.php\.(bak|orig)$
+	}
+
+	# 返回403禁止访问
+	respond @forbidden 403
 }
 
 # 压缩配置
 (encode) {
-    @compressible {
-        header Content-Type text/* application/json* application/javascript* application/xml* image/svg+xml*
-        # 避免对已经压缩过的内容（如 .gz, .br, .zst 文件）再次压缩
-        not header Content-Encoding *
-    }
-
-    encode @compressible {
+    encode {
 		# 压缩算法及级别
         gzip 6
-        zstd 11
+        zstd 9
 
 		# 算法优先级
    		prefer zstd gzip
 
 		# 忽略过小文件
-        minimum_length 1024
+        minimum_length 512
     }
-}
-
-example.com {
-    import log example.com
-	import security
-	import static
-	import forbidden
-	import encode
-
-    root * /var/www/example.com
-
-    tls /etc/caddy/ssl/example.com.pem /etc/caddy/ssl/example.com.pem
-
-    php_fastcgi php:9000
-
-    file_server
 }
 
 # 导入所有网站配置文件

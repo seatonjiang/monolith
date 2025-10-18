@@ -247,17 +247,6 @@ rename-command FLUSHDB  ""    # 禁用清空当前数据库的命令
 
 #### 第一步：编辑网站配置文件
 
-在 `services/caddy/Caddyfile` 文件中填写邮箱地址，例如：
-
-```caddyfile
-{
-    ...
-    # 管理网站证书的 ACME 账户电子邮件地址
-    email name@example.com
-    ...
-}
-```
-
 在 `services/caddy/Caddyfile.d/` 目录添加新的网站配置文件，例如 `example.com.caddyfile`，并在文件中添加新的网站配置，例如：
 
 ```caddyfile
@@ -295,7 +284,7 @@ example.com {
     # tls /etc/caddy/ssl/example.com.pem /etc/caddy/ssl/example.com.pem
 
     # 自动配置证书（以腾讯云 DNS 为例）
-    tls {
+    tls name@example.com {
         dns tencentcloud {
             secret_id <TENCENTCLOUD_SECRET_ID>
             secret_key <TENCENTCLOUD_SECRET_KEY>
