@@ -84,15 +84,14 @@ docker compose up -d
 
 | 镜像名称 | 镜像地址 | 镜像标签 | 构建时间 |
 | :--- | :--- | :--- | :--- |
-| Caddy | `ghcr.io/seatonjiang/caddy` <br> `docker.cnb.cool/seatonjiang/monolith/caddy` | alpine | 2025-10-17 |
+| Caddy | `ghcr.io/seatonjiang/caddy` <br> `docker.cnb.cool/seatonjiang/monolith/caddy` | alpine | |
 | PHP 8.3 | `ghcr.io/seatonjiang/php` <br> `docker.cnb.cool/seatonjiang/monolith/php` | 8.3-fpm-alpine | |
-| PHP 8.4 | `ghcr.io/seatonjiang/php` <br> `docker.cnb.cool/seatonjiang/monolith/php` | 8.4-fpm-alpine | 2025-10-18 |
+| PHP 8.4 | `ghcr.io/seatonjiang/php` <br> `docker.cnb.cool/seatonjiang/monolith/php` | 8.4-fpm-alpine | |
 
 ### 同步的镜像
 
 | 镜像名称 | 镜像地址 | 标签 | 同步日期 |
 | :--- | :--- | :--- | :--- |
-| hello-world | `ghcr.io/seatonjiang/hello-world` <br> `docker.cnb.cool/seatonjiang/monolith/hello-world` | nanoserver-ltsc2025 | 2025-10-18 |
 
 ## 📂 目录结构
 
@@ -242,8 +241,7 @@ rename-command FLUSHDB  ""    # 禁用清空当前数据库的命令
 
 ## 📚 常见问题
 
-<details>
-<summary><strong>Caddy 新增网站</strong></summary>
+### Caddy 新增网站
 
 要在 Caddy 中添加新网站，请按照以下步骤操作：
 
@@ -346,10 +344,7 @@ docker exec -w /etc/caddy caddy caddy reload
 
 在浏览器中输入 `https://example.com` 测试网站是否正常访问。
 
-</details>
-
-<details>
-<summary><strong>Caddy 自动配置 SSL 证书</strong></summary>
+### Caddy 自动配置 SSL 证书
 
 要在 Caddy 中自动配置 SSL 证书（以 `example.com` 域名为例），请按照以下步骤操作：
 
@@ -426,10 +421,7 @@ docker exec -w /etc/caddy caddy caddy reload
 
 在浏览器中输入 `https://example.com` 测试网站是否正常访问。
 
-</details>
-
-<details>
-<summary><strong>Caddy 使用 Google Trust Services 签发证书</strong></summary>
+### Caddy 使用 Google Trust Services 签发证书
 
 要使用 Google Trust Services 签发证书，请按照以下步骤操作：
 
@@ -466,10 +458,7 @@ docker exec -w /etc/caddy caddy caddy reload
 
 在浏览器中输入 `https://example.com` 测试网站是否正常访问并查看证书颁发者。
 
-</details>
-
-<details>
-<summary><strong>PHP 安装扩展</strong></summary>
+### PHP 安装扩展
 
 进入 PHP 容器，使用 `install-php-extensions` 命令快速安装扩展：
 
@@ -480,10 +469,7 @@ install-php-extensions smbclient
 
 > 提示：支持的扩展列表参考 [docker-php-extension-installer](https://github.com/mlocati/docker-php-extension-installer#supported-php-extensions)
 
-</details>
-
-<details>
-<summary><strong>PHP 开启慢脚本日志</strong></summary>
+### PHP 开启慢脚本日志
 
 修改 `services/php/www.conf` 文件，找到下面两行内容并取消注释：
 
@@ -494,10 +480,7 @@ request_slowlog_timeout = 3
 
 > 提示：生产环境中建议关闭慢脚本日志，以提高性能。
 
-</details>
-
-<details>
-<summary><strong>MariaDB 开启慢查询日志</strong></summary>
+### MariaDB 开启慢查询日志
 
 修改 `services/mariadb/mariadb.cnf` 文件，将以下两个参数设置为 1：
 
@@ -508,10 +491,7 @@ log_queries_not_using_indexes=1
 
 > 提示：生产环境建议将这些参数设置为 0，以提高性能。
 
-</details>
-
-<details>
-<summary><strong>MariaDB 通用查询日志配置</strong></summary>
+### MariaDB 通用查询日志配置
 
 修改 `services/mariadb/mariadb.cnf` 文件，找到 `general_log` 参数并设置为 1：
 
@@ -521,10 +501,7 @@ general_log=1
 
 > 提示：生产环境建议将这些参数设置为 0，以提高性能。
 
-</details>
-
-<details>
-<summary><strong>Redis 设置密码</strong></summary>
+### Redis 设置密码
 
 修改 `services/redis/redis.conf` 文件，找到 `requirepass` 参数并设置密码：
 
@@ -533,8 +510,6 @@ requirepass your_strong_password
 ```
 
 > 提示：请使用强密码，避免使用默认密码 `foobared`。
-
-</details>
 
 ## 💖 项目支持
 
