@@ -281,7 +281,7 @@ docker exec -w /etc/caddy caddy caddy reload
 example.com {
     ...
     # 手动配置证书（如果已配置证书，需要将这行注释掉）
-    # tls /etc/caddy/ssl/example.com.pem /etc/caddy/ssl/example.com.pem
+    # tls /etc/caddy/ssl/example.com.crt /etc/caddy/ssl/example.com.key
 
     # 自动配置证书（以腾讯云 DNS 为例）
     tls name@example.com {
