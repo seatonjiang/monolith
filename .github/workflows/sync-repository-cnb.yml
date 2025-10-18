@@ -1,4 +1,4 @@
-name: Sync Repository to CNB
+name: "同步代码到 CNB 仓库"
 
 on:
   push:
@@ -6,27 +6,27 @@ on:
   workflow_run:
     workflows:
       [
+        "构建 Caddy 镜像",
         "构建 PHP 8.3 镜像",
         "构建 PHP 8.4 镜像",
-        "构建 Caddy 镜像",
-        "同步 Docker 镜像",
+        "新增 Docker 镜像",
         "更新 Docker 镜像",
       ]
     types:
       - completed
 
 jobs:
-  sync-to-cnb:
-    name: Sync to CNB Repository
+  sync-repository-cnb:
+    name: "同步代码到 CNB 仓库"
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: "拉取代码"
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Sync to CNB Repository
+      - name: "同步代码"
         run: |
           docker run --rm \
             -v ${{ github.workspace }}:${{ github.workspace }} \

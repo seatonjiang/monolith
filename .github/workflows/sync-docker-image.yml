@@ -1,10 +1,10 @@
-name: "同步 Docker 镜像"
+name: "新增 Docker 镜像"
 
 on:
   workflow_dispatch:
     inputs:
       images:
-        description: "List of Docker images to sync"
+        description: "Docker 镜像列表（image:tag,image:tag）"
         required: true
         default: ""
 
@@ -14,6 +14,7 @@ permissions:
 
 jobs:
   docker-image-sync:
+    name: "新增 Docker 镜像"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code

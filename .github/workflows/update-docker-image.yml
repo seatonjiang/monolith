@@ -11,15 +11,16 @@ permissions:
 
 jobs:
   check-and-update:
+    name: "更新 Docker 镜像"
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: "拉取代码"
         uses: actions/checkout@v4
 
-      - name: Install Dependencies
+      - name: "安装依赖"
         run: sudo apt-get update && sudo apt-get install -y jq skopeo
 
-      - name: Extract Target Image Names and Tags
+      - name: "提取目标镜像名称和标签"
         id: extract-images
         run: |
           awk '
@@ -37,7 +38,7 @@ jobs:
             header_found = 1;
             for (i=1; i<=NF; i++) {
               header = $i;
-              gsub(/^[ \t]+|[ \t]+$/, "", header); # Trim whitespace
+              gsub(/^[ \t]+|[ \t]+$/, "", header);
               if (header == "镜像名称") name_col = i;
               if (header == "标签") tags_col = i;
             }
@@ -58,7 +59,7 @@ jobs:
                 split(tags, tag_array, ",");
                 for (j in tag_array) {
                   current_tag = tag_array[j];
-                  gsub(/^[ \t]+|[ \t]+$/, "", current_tag); # Trim tag
+                  gsub(/^[ \t]+|[ \t]+$/, "", current_tag);
                   if (current_tag != "") {
                     print name ":" current_tag;
                   }
@@ -69,30 +70,32 @@ jobs:
           
           /^###/ && in_table && !/同步的镜像/ { in_table = 0; }
           ' README.md > target-image-list.txt
+
+          echo "目标镜像列表:"
           cat target-image-list.txt          
 
-      - name: Login to GHCR
+      - name: "登录 GHCR 制品库"
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: seatonjiang
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Login to CNB
+      - name: "登录 CNB 制品库"
         uses: docker/login-action@v3
         with:
           registry: docker.cnb.cool
           username: cnb
           password: ${{ secrets.CNB_DOCKER_TOKEN }}
       
-      - name: Check and Sync Images
+      - name: "检查并同步镜像"
         env:
           GHCR_USER: ${{ github.repository_owner }}
         run: |
           set -eo pipefail
 
           while IFS='|' read -r source_image; do
-            echo "Processing image: $source_image"
+            echo "正在处理镜像: $source_image"
             
             owner_lowercase=$(echo "$GHCR_USER" | tr 'A-Z' 'a-z')
 
@@ -115,12 +118,12 @@ jobs:
             LOCAL_IMAGE_URI="dir:/tmp/docker-sync/$simple_image_name:$tag"
 
             if ! source_manifest=$(skopeo inspect --raw "$SOURCE_IMAGE_URI" 2>/dev/null); then
-              echo "Error: Failed to execute 'skopeo inspect' (possibly a network issue or image does not exist), skipped '$SOURCE_IMAGE_URI'."
+              echo "错误：执行 'skopeo inspect' 命令失败，跳过 '$SOURCE_IMAGE_URI'。"
               continue
             fi
             
             if [ -z "$source_manifest" ]; then
-              echo "Error: Failed to get source image manifest (manifest is empty), skipped '$SOURCE_IMAGE_URI'."
+              echo "错误：获取源镜像元数据失败，跳过 '$SOURCE_IMAGE_URI'。"
               continue
             fi
             
@@ -129,41 +132,45 @@ jobs:
             need_update=false
             if [ -z "$target_manifest" ]; then
               need_update=true
-              echo "Target image does not exist, need to sync."
+              echo "提示：目标镜像不存在，需要同步。"
             else
               if [ "$source_manifest" != "$target_manifest" ]; then
                 need_update=true
-                echo "Discovered mismatched digest, need to sync."
+                echo "提示：发现元数据不匹配，需要同步。"
               fi
             fi
 
             if [ "$need_update" = "false" ]; then
-              echo "All checked architectures have matched digests, skip sync."
+              echo "提示：所有架构都匹配，跳过同步。"
               continue
             fi
             
             mkdir -p /tmp/docker-sync
 
             if skopeo copy --all "$SOURCE_IMAGE_URI" "$LOCAL_IMAGE_URI"; then
-              echo "Local sync of $original_source_image successful!"
+              echo "提示：本地同步 $original_source_image 成功！"
               
               if skopeo copy --all "$LOCAL_IMAGE_URI" "$TARGET_IMAGE_URI"; then
-                echo "GHCR sync of $original_source_image successful!"
+                echo "提示：GHCR 同步 $original_source_image 成功！"
               else
-                echo "GHCR sync of $original_source_image failed!"
+                echo "提示：GHCR 同步 $original_source_image 失败！"
               fi
               
               if skopeo copy --all "$LOCAL_IMAGE_URI" "$CNB_IMAGE_URI"; then
-                echo "CNB sync of $original_source_image successful!"
+                echo "提示：CNB 同步 $original_source_image 成功！"
               else
-                echo "CNB sync of $original_source_image failed!"
+                echo "提示：CNB 同步 $original_source_image 失败！"
               fi
               
               rm -rf "/tmp/docker-sync/$simple_image_name:$tag"
             else
-              echo "Local sync of $original_source_image failed!"
+              echo "提示：本地同步 $original_source_image 失败！"
               continue
             fi
+
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git pull --rebase
 
             today=$(TZ=Asia/Shanghai date +"%Y-%m-%d")
             full_image_name=$(echo "$original_source_image" | sed 's/:.*//')
@@ -181,16 +188,14 @@ jobs:
               }
               { print }
             ' README.md > README.tmp && mv README.tmp README.md
-            
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
             git add README.md
             if ! git diff --staged --quiet; then
               timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-              git commit -m "docs: update sync date for $simple_image_name"
+              git commit -m "docs: 更新 $simple_image_name 镜像的同步记录"
               git push
             else
-              echo "README.md has no changes, skip commit."
+              echo "提示：README.md 无变化，跳过提交。"
             fi
 
           done < target-image-list.txt
