@@ -92,6 +92,7 @@ docker compose up -d
 
 | 镜像名称 | 镜像地址 | 标签 | 同步日期 |
 | :--- | :--- | :--- | :--- |
+| hello-world | `ghcr.io/seatonjiang/hello-world` <br> `docker.cnb.cool/seatonjiang/monolith/hello-world` | nanoserver-ltsc2025 | 2025-10-18 |
 
 ## 📂 目录结构
 
