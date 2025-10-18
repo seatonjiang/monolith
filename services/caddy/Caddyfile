@@ -1,130 +1,154 @@
 # 全局配置
 {
-    # 调试模式
-    # debug
+	# 调试模式
+	# debug
 
-    # 禁止自动 HTTP 到 HTTPS 重定向
-    # auto_https disable_redirects
+	# 禁止自动 HTTP 到 HTTPS 重定向
+	# auto_https disable_redirects
 
-    # 跳过自动安装根证书到系统信任存储
-    skip_install_trust
+	# 跳过自动安装根证书到系统信任存储
+	skip_install_trust
 
-    # 使用 Google Trust Services 签发证书
-    # acme_ca https://dv.acme-v02.api.pki.goog/directory
-    # acme_eab {
-    #     key_id <key_id>
-    #     mac_key <mac_key>
-    # }
+	# 使用 Google Trust Services 签发证书
+	# acme_ca https://dv.acme-v02.api.pki.goog/directory
+	# acme_eab {
+	#     key_id <key_id>
+	#     mac_key <mac_key>
+	# }
 }
 
 # 日志配置
 (log) {
-    log {
-        output file /var/log/caddy/{args[0]}.log {
-            # 当日志文件达到 200MB 时进行轮转
-            roll_size 200MiB
+	log {
+		output file /var/log/caddy/{args[0]}.log {
+			# 当日志文件达到 200MB 时进行轮转
+			roll_size 200MiB
 
-            # 使用本地时间命名轮转后的文件
-            roll_local_time
+			# 使用本地时间命名轮转后的文件
+			roll_local_time
 
-            # 最多保留 10 个轮转后的日志文件
-            roll_keep 10
+			# 最多保留 10 个轮转后的日志文件
+			roll_keep 10
 
-            # 轮转后的日志文件保留 720 小时（30天）
-            roll_keep_for 720h
-        }
-        # 设置日志格式为 JSON，便于机器解析
-        format json
+			# 轮转后的日志文件保留 720 小时（30天）
+			roll_keep_for 720h
+		}
+		# 设置日志格式为 JSON，便于机器解析
+		format json
 
-        # 设置日志级别为 INFO，记录常规信息
-        level INFO
-    }
+		# 设置日志级别为 INFO，记录常规信息
+		level INFO
+	}
 }
 
 # 安全响应头配置
 (security_headers) {
-    header {
-        # 强制浏览器使用 HTTPS
-        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	header {
+		# 强制浏览器使用 HTTPS
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 
-        # 更严格的 CSP 策略
-        # Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self';"
+		# 更严格的 CSP 策略
+		# Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self';"
 
-        # 防止浏览器错误地解析文件类型
-        X-Content-Type-Options "nosniff"
+		# 防止浏览器错误地解析文件类型
+		X-Content-Type-Options "nosniff"
 
-        # 控制 Referer 头的发送策略
-        Referrer-Policy "strict-origin-when-cross-origin"
+		# 控制 Referer 头的发送策略
+		Referrer-Policy "strict-origin-when-cross-origin"
 
-        # 隐藏服务器指纹信息
-        -Server
-        -Via
-    }
+		# 隐藏服务器指纹信息
+		-Server
+		-Via
+	}
 }
 
 # 缓存配置
 (static) {
-    # 长期缓存：图片、字体、媒体文件（相对稳定）
-    @long_cache {
-        path *.gif *.jpg *.jpeg *.png *.svg *.webp *.avif *.ico *.bmp *.tiff
-        path *.woff *.woff2 *.ttf *.otf *.eot
-        path *.mp3 *.mp4 *.webm *.ogg *.wav *.m4a
-        path *.pdf *.zip *.tar *.gz
-    }
+	# 长期缓存：图片、字体、媒体文件（相对稳定）
+	@long_cache {
+		path *.gif *.jpg *.jpeg *.png *.svg *.webp *.avif *.ico *.bmp *.tiff
+		path *.woff *.woff2 *.ttf *.otf *.eot
+		path *.mp3 *.mp4 *.webm *.ogg *.wav *.m4a
+		path *.pdf *.zip *.tar *.gz
+	}
 
-    # 中期缓存：CSS/JS（可能有版本控制）
-    @medium_cache {
-        path *.css *.js *.mjs
-    }
+	# 中期缓存：CSS/JS（可能有版本控制）
+	@medium_cache {
+		path *.css *.js *.mjs
+	}
 
-    # 短期缓存：配置和数据文件
-    @short_cache {
-        path *.json *.xml *.txt *.csv *.map
-        path *.manifest *.webmanifest
-        path *.yaml *.yml
-    }
+	# 短期缓存：配置和数据文件
+	@short_cache {
+		path *.json *.xml *.txt *.csv *.map
+		path *.manifest *.webmanifest
+		path *.yaml *.yml
+	}
 
-    # 长期缓存：6个月，适用于相对稳定的资源
-    header @long_cache Cache-Control "public, max-age=15552000"
+	# 长期缓存：6个月，适用于相对稳定的资源
+	header @long_cache Cache-Control "public, max-age=15552000"
 
-    # 中期缓存：7天，适用于CSS/JS
-    header @medium_cache Cache-Control "public, max-age=604800"
+	# 中期缓存：7天，适用于CSS/JS
+	header @medium_cache Cache-Control "public, max-age=604800"
 
-    # 短期缓存：1天，适用于配置文件
-    header @short_cache Cache-Control "public, max-age=86400"
+	# 短期缓存：1天，适用于配置文件
+	header @short_cache Cache-Control "public, max-age=86400"
 }
 
 # 安全防护配置
 (security) {
-    @forbidden {
-        # 高风险配置文件
-        path /.env /config.php /wp-config.php
+	# 高风险配置文件
+	@config_files {
+		path /.env
+		path /config.php
+		path /wp-config.php
+	}
 
-        # 版本控制目录
-        path /.git/* /.svn/*
+	# 版本控制目录 - Git
+	@git_files {
+		path_regexp \.git
+	}
 
-        # 常见攻击目标
-        path /xmlrpc.php /phpinfo.php /adminer.php
-        path /phpmyadmin/* /pma/*
+	# 常见攻击目标
+	@attack_targets {
+		path /xmlrpc.php
+		path /phpinfo.php
+		path /adminer.php
+	}
 
-        # 备份和敏感文件
-        path_regexp sensitive \.(bak|backup|sql|log|env|tmp|swp)$|~$|\.php\.(bak|orig)$
-    }
+	# PHPMyAdmin 相关
+	@phpmyadmin {
+		path_regexp ^/(phpmyadmin|pma)
+	}
 
-    # 返回403禁止访问
-    respond @forbidden 403
+	# 备份文件
+	@backup_files {
+		path_regexp \.(bak|backup|sql|log|tmp|swp)$
+	}
+
+	# 临时文件
+	@temp_files {
+		path_regexp ~$
+	}
+
+	# 返回403禁止访问
+	respond @config_files 403
+	respond @git_files 403
+	respond @attack_targets 403
+	respond @phpmyadmin 403
+	respond @backup_files 403
+	respond @temp_files 403
 }
 
 # 压缩配置
 (encode) {
-    encode {
-        # 压缩算法及级别
-        zstd better
-        gzip 6
+	encode {
+		# 压缩算法及级别
+		zstd better
+		gzip 6
 
-        # 忽略过小文件
-        minimum_length 1024
-    }
+		# 忽略过小文件
+		minimum_length 1024
+	}
 }
 
 # 导入所有网站配置文件

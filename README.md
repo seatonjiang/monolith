@@ -250,7 +250,39 @@ rename-command FLUSHDB  ""    # 禁用清空当前数据库的命令
 在 `services/caddy/Caddyfile.d/` 目录添加新的网站配置文件，例如 `example.com.caddyfile`，并在文件中添加新的网站配置，例如：
 
 ```caddyfile
-test
+example.com {
+    # 日志配置
+    import log example.com
+    # 安全响应头配置
+    import security_headers
+    # 安全防护配置
+    import security
+    # 缓存配置
+    import static
+    # 压缩配置
+    import encode
+
+    # 网站目录
+    root * /var/www/example.com
+
+    # 本地 SSL 证书
+    tls /etc/caddy/ssl/example.com.crt /etc/caddy/ssl/example.com.key
+
+    # PHP-FPM 配置
+    php_fastcgi php:9000 {
+        # 设置超时时间
+        read_timeout 60s
+        write_timeout 60s
+
+        # Docker 环境中的真实IP透传
+        header_up X-Real-IP {http.request.header.X-Real-IP>remote_host}
+        header_up X-Forwarded-For {http.request.header.X-Forwarded-For>remote_host}
+        header_up X-Forwarded-Proto {http.request.header.X-Forwarded-Proto>scheme}
+        header_up X-Forwarded-Host {http.request.header.X-Forwarded-Host>host}
+    }
+
+    file_server
+}
 ```
 
 > 提示：更多配置说明可以参考 [Caddy 官方文档](https://caddyserver.com/docs/caddyfile)
