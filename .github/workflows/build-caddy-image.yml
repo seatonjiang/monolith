@@ -7,6 +7,7 @@ on:
 
 jobs:
   build_caddy_image:
+    name: "构建 Caddy 镜像"
     runs-on: ubuntu-latest
     permissions:
       contents: write

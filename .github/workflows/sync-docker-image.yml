@@ -17,35 +17,31 @@ jobs:
     name: "新增 Docker 镜像"
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: "拉取代码"
         uses: actions/checkout@v4
 
-      - name: Install Dependencies
+      - name: "安装依赖"
         run: sudo apt-get update && sudo apt-get install -y jq skopeo
         
-      - name: Set up Docker Buildx
+      - name: "设置 Docker Buildx 构建器"
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to GHCR
+      - name: "登录 GHCR 制品库"
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: seatonjiang
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Login to CNB
+      - name: "登录 CNB 制品库"
         uses: docker/login-action@v3
         with:
           registry: docker.cnb.cool
           username: cnb
           password: ${{ secrets.CNB_DOCKER_TOKEN }}
 
-      - name: Sync Docker Images and Update README
+      - name: "同步 Docker 镜像并更新 README"
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git pull --rebase
-          
           NEW_ROWS_DATA=""
           UNIQUE_SEPARATOR="%%%"
           TABLE_TITLE="### 同步的镜像"
@@ -98,11 +94,11 @@ jobs:
             done <<< "$existing_image_info"
             
             if [ "$image_exists" = true ] && [[ "$existing_tags" == *"$current_tag"* ]]; then
-              echo "Tag $current_tag for image $IMAGE_NAME already exists, skipping!"
+              echo "提示：镜像 $IMAGE_NAME 标签 $current_tag 已存在，跳过同步。"
               continue
             fi
             
-            echo "Processing $full_image..."
+            echo "处理 $full_image..."
             target_tag="$current_tag"
 
             SOURCE_IMAGE_URI="docker://$current_image:$current_tag"
@@ -114,23 +110,23 @@ jobs:
             mkdir -p /tmp/docker-sync
             
             if skopeo copy --all "$SOURCE_IMAGE_URI" "$LOCAL_IMAGE_URI"; then
-              echo "Local sync of $full_image successful!"
+              echo "提示：本地同步 $full_image 成功！"
               
               if skopeo copy --all "$LOCAL_IMAGE_URI" "$GHCR_IMAGE_URI"; then
-                echo "GHCR sync of $full_image successful!"
+                echo "提示：GHCR 同步 $full_image 成功！"
               else
-                echo "GHCR sync of $full_image failed!"
+                echo "提示：GHCR 同步 $full_image 失败！"
               fi
               
               if skopeo copy --all "$LOCAL_IMAGE_URI" "$CNB_IMAGE_URI"; then
-                echo "CNB sync of $full_image successful!"
+                echo "提示：CNB 同步 $full_image 成功！"
               else
-                echo "CNB sync of $full_image failed!"
+                echo "提示：CNB 同步 $full_image 失败！"
               fi
               
               rm -rf "/tmp/docker-sync/$DEST_IMAGE_NAME:$target_tag"
             else
-              echo "Local sync of $full_image failed!"
+              echo "提示：本地同步 $full_image 失败！"
               continue
             fi
 
@@ -157,11 +153,13 @@ jobs:
           done
 
           if [ -z "$NEW_ROWS_DATA" ]; then
-            echo "No new images added, no update needed!"
+            echo "提示：没有新增镜像，无需更新！"
             exit 0
           fi
 
-          echo "Updating README.md..."
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase
 
           existing_rows=$(awk '
             $0 == "'"${TABLE_TITLE}"'" { in_table=1; next }
@@ -278,9 +276,9 @@ jobs:
           rm -f new_table.tmp
 
           if git diff --staged --quiet; then
-            echo "No changes in README file, no commit needed."
+            echo "提示：README 文件无变更，无需提交。"
           else
-            git commit -m "docs: add a synced Docker image"
+            git commit -m "docs: 新增 $img_name 镜像"
             git push
           fi
 
