@@ -1,4 +1,4 @@
-name: "新增 Docker 镜像"
+name: "ci: 新增 Docker 镜像"
 
 on:
   workflow_dispatch:

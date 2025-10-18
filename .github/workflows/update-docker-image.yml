@@ -1,4 +1,4 @@
-name: "更新 Docker 镜像"
+name: "ci: 更新 Docker 镜像"
 
 on:
   schedule:

@@ -1,4 +1,4 @@
-name: "同步代码到 CNB 仓库"
+name: "ci: 同步代码到 CNB 仓库"
 
 on:
   push:
@@ -6,11 +6,11 @@ on:
   workflow_run:
     workflows:
       [
-        "构建 Caddy 镜像",
-        "构建 PHP 8.3 镜像",
-        "构建 PHP 8.4 镜像",
-        "新增 Docker 镜像",
-        "更新 Docker 镜像",
+        "ci: 构建 Caddy 镜像",
+        "ci: 构建 PHP 8.3 镜像",
+        "ci: 构建 PHP 8.4 镜像",
+        "ci: 新增 Docker 镜像",
+        "ci: 更新 Docker 镜像",
       ]
     types:
       - completed

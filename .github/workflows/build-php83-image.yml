@@ -1,4 +1,4 @@
-name: "构建 PHP 8.3 镜像"
+name: "ci: 构建 PHP 8.3 镜像"
 
 on:
   schedule:
