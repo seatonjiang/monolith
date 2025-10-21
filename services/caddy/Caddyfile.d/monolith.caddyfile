@@ -1,0 +1,16 @@
+:80 {
+    # 缓存配置
+    import static
+    # 压缩配置
+    import encode
+    # 安全配置
+    import security
+
+    # 网站目录
+    root * /var/www/default
+
+    # PHP-FPM 配置
+    php_fastcgi php:9000
+    # 文件服务器配置
+    file_server
+}
