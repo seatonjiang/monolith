@@ -92,6 +92,7 @@ docker compose up -d
 
 | 镜像名称 | 镜像地址 | 镜像标签 | 同步日期 |
 | :--- | :--- | :--- | :--- |
+| mariadb | `ghcr.io/seatonjiang/mariadb` <br> `docker.cnb.cool/seatonjiang/monolith/mariadb` | 11.4 | 2025-10-21 |
 
 ## 📂 目录结构
 
