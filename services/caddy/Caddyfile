@@ -30,13 +30,13 @@
 			# 最多保留 10 个轮转后的日志文件
 			roll_keep 10
 
-			# 轮转后的日志文件保留 720 小时（30天）
+			# 轮转后的日志文件保留 720 小时
 			roll_keep_for 720h
 		}
-		# 设置日志格式为 JSON，便于机器解析
+		# 设置日志格式为 JSON
 		format json
 
-		# 设置日志级别为 WARN，记录警告信息
+		# 设置日志级别为 WARN
 		level WARN
 	}
 }
@@ -64,7 +64,7 @@
 
 # 缓存配置
 (static) {
-	# 长期缓存：图片、字体、媒体文件（相对稳定）
+	# 长期缓存
 	@long_cache {
 		path *.gif *.jpg *.jpeg *.png *.svg *.webp *.avif *.ico *.bmp *.tiff
 		path *.woff *.woff2 *.ttf *.otf *.eot
@@ -72,25 +72,25 @@
 		path *.pdf *.zip *.tar *.gz
 	}
 
-	# 中期缓存：CSS/JS（可能有版本控制）
+	# 中期缓存
 	@medium_cache {
 		path *.css *.js *.mjs
 	}
 
-	# 短期缓存：配置和数据文件
+	# 短期缓存
 	@short_cache {
 		path *.json *.xml *.txt *.csv *.map
 		path *.manifest *.webmanifest
 		path *.yaml *.yml
 	}
 
-	# 长期缓存：6个月，适用于相对稳定的资源
+	# 长期缓存 - 6 个月
 	header @long_cache Cache-Control "public, max-age=15552000"
 
-	# 中期缓存：7天，适用于CSS/JS
+	# 中期缓存 - 7 天
 	header @medium_cache Cache-Control "public, max-age=604800"
 
-	# 短期缓存：1天，适用于配置文件
+	# 短期缓存 - 1 天
 	header @short_cache Cache-Control "public, max-age=86400"
 }
 
