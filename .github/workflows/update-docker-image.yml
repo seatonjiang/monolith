@@ -101,7 +101,7 @@ jobs:
           set -eo pipefail
 
           while IFS='|' read -r source_image; do
-            echo "正在处理镜像: $source_image"
+            echo "正在处理镜像：$source_image"
             
             original_source_image="$source_image"
             image_name_without_tag=$(echo "$source_image" | cut -d':' -f1)
@@ -123,12 +123,12 @@ jobs:
             LOCAL_IMAGE_URI="dir:/tmp/docker-sync/$simple_image_name:$tag"
 
             if ! source_manifest=$(skopeo inspect --raw "$SOURCE_IMAGE_URI" 2>/dev/null); then
-              echo "错误：执行 'skopeo inspect' 命令失败，跳过 '$SOURCE_IMAGE_URI'。"
+              echo "错误：执行 'skopeo inspect' 命令失败，跳过 '$SOURCE_IMAGE_URI'！"
               continue
             fi
             
             if [ -z "$source_manifest" ]; then
-              echo "错误：获取源镜像元数据失败，跳过 '$SOURCE_IMAGE_URI'。"
+              echo "错误：获取源镜像元数据失败，跳过 '$SOURCE_IMAGE_URI'！"
               continue
             fi
             
@@ -137,16 +137,16 @@ jobs:
             need_update=false
             if [ -z "$target_manifest" ]; then
               need_update=true
-              echo "提示：目标镜像不存在，需要同步。"
+              echo "提示：目标镜像不存在，需要同步！"
             else
               if [ "$source_manifest" != "$target_manifest" ]; then
                 need_update=true
-                echo "提示：发现元数据不匹配，需要同步。"
+                echo "提示：发现元数据不匹配，需要同步！"
               fi
             fi
 
             if [ "$need_update" = "false" ]; then
-              echo "提示：所有架构都匹配，跳过同步。"
+              echo "提示：所有架构都匹配，跳过同步！"
               continue
             fi
             
@@ -206,7 +206,7 @@ jobs:
               git commit -m "docs: 更新 $simple_image_name 镜像的同步记录"
               git push
             else
-              echo "提示：README.md 无变化，跳过提交。"
+              echo "提示：README.md 无变化，跳过提交！"
             fi
 
           done < target-image-list.txt

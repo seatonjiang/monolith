@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       images:
-        description: "Docker 镜像列表（image:tag,image:tag）"
+        description: "Docker 镜像列表 (输入格式：image:tag,image:tag)"
         required: true
         default: ""
 
@@ -100,7 +100,7 @@ jobs:
             done <<< "$existing_image_info"
             
             if [ "$tag_exists" = true ]; then
-              echo "提示：镜像 $IMAGE_NAME 标签 $current_tag 已存在，跳过同步。"
+              echo "提示：镜像 $IMAGE_NAME 标签 $current_tag 已存在，跳过同步！"
               continue
             fi
             
@@ -147,7 +147,6 @@ jobs:
             
             sync_date=$(TZ='Asia/Shanghai' date +"%Y-%m-%d")
             
-            echo "更新 README 文件..."
             git pull --rebase
             
             current_existing_rows=$(awk '
@@ -264,7 +263,7 @@ jobs:
             rm -f new_table.tmp
 
             if git diff --staged --quiet; then
-              echo "提示：镜像 $DEST_IMAGE_NAME 无变更，无需提交。"
+              echo "提示：镜像 $DEST_IMAGE_NAME 无变更，无需提交！"
             else
               git commit -m "docs: 添加 $DEST_IMAGE_NAME 镜像的同步记录"
               git push
