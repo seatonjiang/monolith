@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       images:
-        description: "Docker 镜像列表 (输入格式：image:tag,image:tag)"
+        description: "Docker 镜像列表（image:tag,image:tag）"
         required: true
         default: ""
 
