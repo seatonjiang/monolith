@@ -70,6 +70,7 @@ jobs:
           context: .
           file: /tmp/docker-build-php/Dockerfile
           platforms: linux/amd64,linux/arm/v7,linux/arm64/v8
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
 
       - name: "更新构建记录"
