@@ -114,7 +114,7 @@ jobs:
 
           git add "$README_FILE"
           if git diff --staged --quiet; then
-            echo "提示：README 文件未发生变化，无需提交！"
+            echo "README 文件未发生变化，无需提交！"
           else
             git commit -m "docs: 更新 $IMAGE_NAME 镜像的构建记录"
             git push

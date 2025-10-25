@@ -100,7 +100,7 @@ jobs:
             done <<< "$existing_image_info"
             
             if [ "$tag_exists" = true ]; then
-              echo "提示：镜像 $IMAGE_NAME 标签 $current_tag 已存在，跳过同步！"
+              echo "镜像 $IMAGE_NAME 标签 $current_tag 已存在，跳过同步！"
               continue
             fi
             
@@ -117,29 +117,29 @@ jobs:
             mkdir -p /tmp/docker-sync
             
             if skopeo copy --all "$SOURCE_IMAGE_URI" "$LOCAL_IMAGE_URI"; then
-              echo "提示：本地同步 $full_image 成功！"
+              echo "本地同步 $full_image 成功！"
               
               if skopeo copy --all "$LOCAL_IMAGE_URI" "$GHCR_IMAGE_URI"; then
-                echo "提示：GHCR 同步 $full_image 成功！"
+                echo "GHCR 同步 $full_image 成功！"
               else
-                echo "提示：GHCR 同步 $full_image 失败！"
+                echo "GHCR 同步 $full_image 失败！"
               fi
               
               if skopeo copy --all "$LOCAL_IMAGE_URI" "$CNB_IMAGE_URI"; then
-                echo "提示：CNB 同步 $full_image 成功！"
+                echo "CNB 同步 $full_image 成功！"
               else
-                echo "提示：CNB 同步 $full_image 失败！"
+                echo "CNB 同步 $full_image 失败！"
               fi
               
               if skopeo copy --all "$LOCAL_IMAGE_URI" "$DOCKERHUB_IMAGE_URI"; then
-                echo "提示：Docker Hub 同步 $full_image 成功！"
+                echo "Docker Hub 同步 $full_image 成功！"
               else
-                echo "提示：Docker Hub 同步 $full_image 失败！"
+                echo "Docker Hub 同步 $full_image 失败！"
               fi
               
               rm -rf "/tmp/docker-sync/$DEST_IMAGE_NAME:$target_tag"
             else
-              echo "提示：本地同步 $full_image 失败！"
+              echo "本地同步 $full_image 失败！"
               continue
             fi
 
@@ -263,7 +263,7 @@ jobs:
             rm -f new_table.tmp
 
             if git diff --staged --quiet; then
-              echo "提示：镜像 $DEST_IMAGE_NAME 无变更，无需提交！"
+              echo "镜像 $DEST_IMAGE_NAME 无变更，无需提交！"
             else
               git commit -m "docs: 添加 $DEST_IMAGE_NAME 镜像的同步记录"
               git push

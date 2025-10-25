@@ -137,45 +137,45 @@ jobs:
             need_update=false
             if [ -z "$target_manifest" ]; then
               need_update=true
-              echo "提示：目标镜像不存在，需要同步！"
+              echo "目标镜像不存在，需要同步！"
             else
               if [ "$source_manifest" != "$target_manifest" ]; then
                 need_update=true
-                echo "提示：发现元数据不匹配，需要同步！"
+                echo "发现元数据不匹配，需要同步！"
               fi
             fi
 
             if [ "$need_update" = "false" ]; then
-              echo "提示：所有架构都匹配，跳过同步！"
+              echo "所有架构都匹配，跳过同步！"
               continue
             fi
             
             mkdir -p /tmp/docker-sync
 
             if skopeo copy --all "$SOURCE_IMAGE_URI" "$LOCAL_IMAGE_URI"; then
-              echo "提示：本地同步 $original_source_image 成功！"
+              echo "本地同步 $original_source_image 成功！"
               
               if skopeo copy --all "$LOCAL_IMAGE_URI" "$TARGET_IMAGE_URI"; then
-                echo "提示：GHCR 同步 $original_source_image 成功！"
+                echo "GHCR 同步 $original_source_image 成功！"
               else
-                echo "提示：GHCR 同步 $original_source_image 失败！"
+                echo "GHCR 同步 $original_source_image 失败！"
               fi
               
               if skopeo copy --all "$LOCAL_IMAGE_URI" "$CNB_IMAGE_URI"; then
-                echo "提示：CNB 同步 $original_source_image 成功！"
+                echo "CNB 同步 $original_source_image 成功！"
               else
-                echo "提示：CNB 同步 $original_source_image 失败！"
+                echo "CNB 同步 $original_source_image 失败！"
               fi
               
               if skopeo copy --all "$LOCAL_IMAGE_URI" "$DOCKERHUB_IMAGE_URI"; then
-                echo "提示：Docker Hub 同步 $original_source_image 成功！"
+                echo "Docker Hub 同步 $original_source_image 成功！"
               else
-                echo "提示：Docker Hub 同步 $original_source_image 失败！"
+                echo "Docker Hub 同步 $original_source_image 失败！"
               fi
               
               rm -rf "/tmp/docker-sync/$simple_image_name:$tag"
             else
-              echo "提示：本地同步 $original_source_image 失败！"
+              echo "本地同步 $original_source_image 失败！"
               continue
             fi
 
@@ -206,7 +206,7 @@ jobs:
               git commit -m "docs: 更新 $simple_image_name 镜像的同步记录"
               git push
             else
-              echo "提示：README.md 无变化，跳过提交！"
+              echo "README.md 无变化，跳过提交！"
             fi
 
           done < target-image-list.txt
