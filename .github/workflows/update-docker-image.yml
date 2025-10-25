@@ -40,7 +40,7 @@ jobs:
               header = $i;
               gsub(/^[ \t]+|[ \t]+$/, "", header);
               if (header == "镜像名称") name_col = i;
-              if (header == "标签") tags_col = i;
+              if (header == "镜像标签") tags_col = i;
             }
             next;
           }
