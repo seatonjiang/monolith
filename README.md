@@ -34,7 +34,7 @@ vi .env
 
 ```ini
 # PHP 版本
-PHP_VERSION=8.4-fpm-alpine
+PHP_VERSION=8.5-fpm-alpine
 
 # MariaDB 默认数据库名称
 MARIADB_DATABASE_NAME=monolith

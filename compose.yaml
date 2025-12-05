@@ -4,7 +4,7 @@ services:
       context: ./services/php
       args:
         - IMAGE_REGISTRY=${IMAGE_REGISTRY:-seatonjiang}
-        - PHP_VERSION=${PHP_VERSION:-8.4-fpm-alpine}
+        - PHP_VERSION=${PHP_VERSION:-8.5-fpm-alpine}
         - ALPINE_MIRROR=${ALPINE_MIRROR:-mirrors.ustc.edu.cn}
     container_name: php
     restart: always
