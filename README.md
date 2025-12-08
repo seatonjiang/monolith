@@ -81,7 +81,7 @@ docker compose up -d
 | Caddy | `seatonjiang/caddy` <br> `ghcr.io/seatonjiang/caddy` | alpine | 2025-12-08 |
 | PHP 8.3 | `seatonjiang/php` <br> `ghcr.io/seatonjiang/php` | 8.3-fpm-alpine | 2025-12-08 |
 | PHP 8.4 | `seatonjiang/php` <br> `ghcr.io/seatonjiang/php` | 8.4-fpm-alpine | 2025-12-08 |
-| PHP 8.5 | `seatonjiang/php` <br> `ghcr.io/seatonjiang/php` | 8.5-fpm-alpine | 2025-12-05 |
+| PHP 8.5 | `seatonjiang/php` <br> `ghcr.io/seatonjiang/php` | 8.5-fpm-alpine | 2025-12-08 |
 
 ### 同步的镜像
 
