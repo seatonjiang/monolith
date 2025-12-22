@@ -79,7 +79,7 @@ docker compose up -d
 | 镜像名称 | 镜像地址 | 镜像标签 | 构建时间 |
 | :--- | :--- | :--- | :--- |
 | Caddy | `seatonjiang/caddy` <br> `ghcr.io/seatonjiang/caddy` | alpine | 2025-12-15 |
-| PHP 8.3 | `seatonjiang/php` <br> `ghcr.io/seatonjiang/php` | 8.3-fpm-alpine | 2025-12-15 |
+| PHP 8.3 | `seatonjiang/php` <br> `ghcr.io/seatonjiang/php` | 8.3-fpm-alpine | 2025-12-22 |
 | PHP 8.4 | `seatonjiang/php` <br> `ghcr.io/seatonjiang/php` | 8.4-fpm-alpine | 2025-12-15 |
 | PHP 8.5 | `seatonjiang/php` <br> `ghcr.io/seatonjiang/php` | 8.5-fpm-alpine | 2025-12-15 |
 
