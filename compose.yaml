@@ -116,7 +116,7 @@ services:
       context: ./services/redis
       args:
         - IMAGE_REGISTRY=${IMAGE_REGISTRY:-seatonjiang}
-        - REDIS_VERSION=${REDIS_VERSION:-8.2-alpine}
+        - REDIS_VERSION=${REDIS_VERSION:-8.4-alpine}
         - ALPINE_MIRROR=${ALPINE_MIRROR:-mirrors.ustc.edu.cn}
     container_name: redis
     restart: always
