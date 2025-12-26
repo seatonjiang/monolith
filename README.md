@@ -90,7 +90,7 @@ docker compose up -d
 | mariadb | `seatonjiang/mariadb` <br> `ghcr.io/seatonjiang/mariadb` | 11.4,11.8 | 2025-11-18 |
 | memcached | `seatonjiang/memcached` <br> `ghcr.io/seatonjiang/memcached` | 1.6-alpine | 2025-12-19 |
 | phpmyadmin | `seatonjiang/phpmyadmin` <br> `ghcr.io/seatonjiang/phpmyadmin` | 5.2 | 2025-12-23 |
-| redis | `seatonjiang/redis` <br> `ghcr.io/seatonjiang/redis` | 8.2-alpine | 2025-11-04 |
+| redis | `seatonjiang/redis` <br> `ghcr.io/seatonjiang/redis` | 8.2-alpine,8.4-alpine | 2025-12-26 |
 
 ## 📂 目录结构
 
