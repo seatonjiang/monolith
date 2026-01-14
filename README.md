@@ -87,7 +87,7 @@ docker compose up -d
 
 | 镜像名称 | 镜像地址 | 镜像标签 | 同步日期 |
 | :--- | :--- | :--- | :--- |
-| mariadb | `seatonjiang/mariadb` <br> `ghcr.io/seatonjiang/mariadb` | 11.4,11.8 | |
+| mariadb | `seatonjiang/mariadb` <br> `ghcr.io/seatonjiang/mariadb` | 11.4,11.8 | 2026-01-14 |
 | memcached | `seatonjiang/memcached` <br> `ghcr.io/seatonjiang/memcached` | 1.6-alpine | |
 | phpmyadmin | `seatonjiang/phpmyadmin` <br> `ghcr.io/seatonjiang/phpmyadmin` | 5.2 | |
 | redis | `seatonjiang/redis` <br> `ghcr.io/seatonjiang/redis` | 8.4-alpine | |
