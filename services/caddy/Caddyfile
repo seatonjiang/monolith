@@ -1,0 +1,121 @@
+# 全局配置
+{
+	# 调试模式
+	# debug
+
+	# 禁止自动 HTTP 到 HTTPS 重定向
+	# auto_https disable_redirects
+
+	# 跳过自动安装根证书到系统信任存储
+	skip_install_trust
+
+	# 使用 Google Trust Services 签发证书
+	# acme_ca https://dv.acme-v02.api.pki.goog/directory
+	# acme_eab {
+	#     key_id <key_id>
+	#     mac_key <mac_key>
+	# }
+}
+
+# 日志配置
+(log) {
+	log {
+		output file /var/log/caddy/{args[0]}.log {
+			# 当日志文件达到 200MB 时进行轮转
+			roll_size 200MiB
+
+			# 使用本地时间命名轮转后的文件
+			roll_local_time
+
+			# 最多保留 10 个轮转后的日志文件
+			roll_keep 10
+
+			# 轮转后的日志文件保留 720 小时
+			roll_keep_for 720h
+		}
+		# 设置日志格式为 JSON
+		format json
+
+		# 设置日志级别为 WARN
+		level WARN
+	}
+}
+
+# 安全配置
+(security) {
+	header {
+		# 强制浏览器使用 HTTPS
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+		# 更严格的 CSP 策略
+		# Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self';"
+
+		# 防止浏览器对内容类型进行嗅探
+		X-Content-Type-Options "nosniff"
+
+		# 控制 Referer 头的发送策略
+		Referrer-Policy "strict-origin-when-cross-origin"
+
+		# 隐藏服务器指纹信息
+		-Server
+		-Via
+	}
+}
+
+# 缓存配置
+(static) {
+	# 长期缓存
+	@long_cache {
+		path *.gif *.jpg *.jpeg *.png *.svg *.webp *.avif *.ico *.bmp *.tiff
+		path *.woff *.woff2 *.ttf *.otf *.eot
+		path *.mp3 *.mp4 *.webm *.ogg *.wav *.m4a
+		path *.pdf *.zip *.tar *.gz
+	}
+
+	# 中期缓存
+	@medium_cache {
+		path *.css *.js *.mjs
+	}
+
+	# 短期缓存
+	@short_cache {
+		path *.json *.xml *.txt *.csv *.map
+		path *.manifest *.webmanifest
+		path *.yaml *.yml
+	}
+
+	# 长期缓存 - 6 个月
+	header @long_cache Cache-Control "public, max-age=15552000"
+
+	# 中期缓存 - 7 天
+	header @medium_cache Cache-Control "public, max-age=604800"
+
+	# 短期缓存 - 1 天
+	header @short_cache Cache-Control "public, max-age=86400"
+}
+
+# 压缩配置
+(encode) {
+	encode {
+		# 压缩算法及级别
+		zstd better
+		gzip 6
+
+		# 忽略过小文件
+		minimum_length 512
+	}
+}
+
+# WordPress 配置
+(wordpress) {
+	@forbidden {
+		path /wp-config.php
+		path /wp-content/uploads/*.php
+		path /wp-admin/includes/*.php
+		path /wp-includes/*.php
+	}
+	respond @forbidden 403
+}
+
+# 导入所有网站配置文件
+import Caddyfile.d/*.caddyfile
