@@ -9,9 +9,6 @@ jobs:
   update-docker-image:
     name: "更新 Docker 镜像"
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
 
     steps:
       - name: "拉取代码"
@@ -198,3 +195,12 @@ jobs:
             fi
 
           done < target-image-list.txt
+
+      - name: "删除历史运行记录"
+        uses: ophub/delete-releases-workflows@main
+        with:
+          delete_releases: false
+          releases_keep_latest: 1
+          delete_workflows: true
+          workflows_keep_day: 1
+          gh_token: ${{ secrets.GITHUB_TOKEN }}

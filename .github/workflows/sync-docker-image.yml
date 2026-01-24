@@ -12,9 +12,6 @@ jobs:
   sync-docker-image:
     name: "添加 Docker 镜像"
     runs-on: ubuntu-latest
-    permissions:
-      packages: write
-      contents: write
 
     steps:
       - name: "拉取代码"

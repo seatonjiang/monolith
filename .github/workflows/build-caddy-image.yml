@@ -9,9 +9,6 @@ jobs:
   build-caddy-image:
     name: "构建 Caddy 镜像"
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
 
     steps:
       - name: "拉取代码"

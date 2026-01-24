@@ -9,9 +9,6 @@ jobs:
   build-php85-image:
     name: "构建 PHP 8.5 镜像"
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
 
     steps:
       - name: "拉取代码"
