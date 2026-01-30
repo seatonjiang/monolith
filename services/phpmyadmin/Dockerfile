@@ -1,0 +1,3 @@
+ARG IMAGE_REGISTRY
+ARG PHPMYADMIN_VERSION
+FROM ${IMAGE_REGISTRY:-docker.cnb.cool/seatonjiang/monolith}/phpmyadmin:${PHPMYADMIN_VERSION:-5.2}
