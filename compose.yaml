@@ -1,0 +1,150 @@
+services:
+  php:
+    build:
+      context: ./services/php
+      args:
+        - IMAGE_REGISTRY=${IMAGE_REGISTRY:-docker.cnb.cool/seatonjiang/monolith}
+        - PHP_VERSION=${PHP_VERSION:-8.5-fpm-alpine}
+        - ALPINE_MIRROR=${ALPINE_MIRROR:-mirrors.cloud.tencent.com}
+    container_name: php
+    restart: always
+    volumes:
+      - ./wwwroot/:/var/www/:rw
+      - ./logs/php/:/var/log/php/:rw
+      - ./services/php/php.ini:/usr/local/etc/php/php.ini:ro
+      - ./services/php/php-fpm.conf:/usr/local/etc/php-fpm.conf:ro
+      - ./services/php/www.conf:/usr/local/etc/php-fpm.d/www.conf:ro
+      - ./services/php/logrotate/php:/etc/logrotate.d/php:ro
+    environment:
+      - TZ=${TIME_ZONE:-Asia/Shanghai}
+    networks:
+      monolith:
+        ipv4_address: 172.16.24.10
+
+  caddy:
+    build:
+      context: ./services/caddy
+      args:
+        - IMAGE_REGISTRY=${IMAGE_REGISTRY:-docker.cnb.cool/seatonjiang/monolith}
+        - CADDY_VERSION=${CADDY_VERSION:-alpine}
+        - ALPINE_MIRROR=${ALPINE_MIRROR:-mirrors.cloud.tencent.com}
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "${CADDY_HTTP_PORT:-80}:80"
+      - "${CADDY_HTTPS_PORT:-443}:443"
+      - "${CADDY_HTTPS_PORT:-443}:443/udp"
+    volumes:
+      - ./wwwroot/:/var/www/:rw
+      - ./data/caddy/:/data/caddy/:rw
+      - ./logs/caddy/:/var/log/caddy/:rw
+      - ./services/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./services/caddy/Caddyfile.d/:/etc/caddy/Caddyfile.d/:ro
+      - ./services/caddy/ssl/:/etc/caddy/ssl/:ro
+    environment:
+      - TZ=${TIME_ZONE:-Asia/Shanghai}
+    networks:
+      monolith:
+        ipv4_address: 172.16.24.11
+
+  mariadb:
+    build:
+      context: ./services/mariadb
+      args:
+        - IMAGE_REGISTRY=${IMAGE_REGISTRY:-docker.cnb.cool/seatonjiang/monolith}
+        - MARIADB_VERSION=${MARIADB_VERSION:-11.8}
+        - UBUNTU_MIRROR=${UBUNTU_MIRROR:-mirrors.cloud.tencent.com}
+    container_name: mariadb
+    restart: always
+    volumes:
+      - ./data/mariadb/:/var/lib/mysql/:rw
+      - ./logs/mariadb/:/var/log/mysql/:rw
+      - ./services/mariadb/mariadb.cnf:/etc/mysql/conf.d/my.cnf:ro
+      - ./services/mariadb/scripts/:/docker-entrypoint-initdb.d/:ro
+      - ./services/mariadb/logrotate/mariadb:/etc/logrotate.d/mariadb:ro
+    environment:
+      - TZ=${TIME_ZONE:-Asia/Shanghai}
+      - MARIADB_DATABASE=${MARIADB_DATABASE_NAME:-monolith}
+      - MARIADB_USER_FILE=/run/secrets/mariadb-user-name
+      - MARIADB_PASSWORD_FILE=/run/secrets/mariadb-user-pwd
+      - MARIADB_ROOT_PASSWORD_FILE=/run/secrets/mariadb-root-pwd
+    secrets:
+      - mariadb-root-pwd
+      - mariadb-user-name
+      - mariadb-user-pwd
+    networks:
+      monolith:
+        ipv4_address: 172.16.24.12
+
+  phpmyadmin:
+    build:
+      context: ./services/phpmyadmin
+      args:
+        - IMAGE_REGISTRY=${IMAGE_REGISTRY:-docker.cnb.cool/seatonjiang/monolith}
+        - PHPMYADMIN_VERSION=${PHPMYADMIN_VERSION:-5.2}
+    container_name: phpmyadmin
+    restart: always
+    ports:
+      - "${PHPMYADMIN_WEB_PORT:-28080}:80"
+    environment:
+      - TZ=${TIME_ZONE:-Asia/Shanghai}
+      - PMA_ARBITRARY=0
+      - PMA_HOST=mariadb
+      - PMA_PORT=3306
+      - UPLOAD_LIMIT=${PHPMYADMIN_UPLOAD_LIMIT:-128M}
+    depends_on:
+      - mariadb
+    networks:
+      monolith:
+        ipv4_address: 172.16.24.13
+
+  memcached:
+    build:
+      context: ./services/memcached
+      args:
+        - IMAGE_REGISTRY=${IMAGE_REGISTRY:-docker.cnb.cool/seatonjiang/monolith}
+        - MEMCACHED_VERSION=${MEMCACHED_VERSION:-1.6-alpine}
+        - ALPINE_MIRROR=${ALPINE_MIRROR:-mirrors.cloud.tencent.com}
+    container_name: memcached
+    restart: always
+    networks:
+      monolith:
+        ipv4_address: 172.16.24.14
+
+  redis:
+    build:
+      context: ./services/redis
+      args:
+        - IMAGE_REGISTRY=${IMAGE_REGISTRY:-docker.cnb.cool/seatonjiang/monolith}
+        - REDIS_VERSION=${REDIS_VERSION:-8.4-alpine}
+        - ALPINE_MIRROR=${ALPINE_MIRROR:-mirrors.cloud.tencent.com}
+    container_name: redis
+    restart: always
+    volumes:
+      - ./data/redis/:/data/:rw
+      - ./services/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - ./logs/redis/:/var/log/redis/:rw
+      - ./services/redis/logrotate/redis:/etc/logrotate.d/redis:ro
+    environment:
+      - TZ=${TIME_ZONE:-Asia/Shanghai}
+    networks:
+      monolith:
+        ipv4_address: 172.16.24.15
+
+networks:
+  monolith:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.24.0/25
+          gateway: 172.16.24.1
+          ip_range: 172.16.24.0/26
+
+secrets:
+  mariadb-root-pwd:
+    file: ./secrets/mariadb-root-pwd
+  mariadb-user-name:
+    file: ./secrets/mariadb-user-name
+  mariadb-user-pwd:
+    file: ./secrets/mariadb-user-pwd
