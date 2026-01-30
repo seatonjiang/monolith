@@ -1,0 +1,54 @@
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+.DocumentRevisions-V100
+.fseventsd
+.TemporaryItems
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# 数据目录
+/data/**
+!/data/*/
+!/data/**/.gitkeep
+
+# 日志目录
+/logs/**
+!/logs/*/
+!logs/**/.gitkeep
+
+# SSL 证书
+/services/caddy/ssl/*
+!services/caddy/ssl/.gitkeep
+
+# Caddy 配置文件
+/services/caddy/Caddyfile.d/*
+!services/caddy/Caddyfile.d/monolith.caddyfile
+
+# 网站目录
+/wwwroot/*
+!/wwwroot/default/
+
+# 环境文件
+.env
