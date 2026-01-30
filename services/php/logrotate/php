@@ -1,0 +1,12 @@
+/var/log/php/*.log {
+    daily
+    compress
+    rotate 30
+    missingok
+    notifempty
+    dateext
+    sharedscripts
+    postrotate
+        [ -f /usr/local/var/run/php-fpm.pid ] && kill -USR1 "$(cat /usr/local/var/run/php-fpm.pid)" || true
+    endscript
+}
