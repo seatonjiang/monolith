@@ -1,0 +1,35 @@
+name: "同步代码仓库"
+
+on:
+  push:
+  workflow_run:
+    workflows:
+      - "构建 Caddy 镜像"
+      - "构建 PHP 8.3 镜像"
+      - "构建 PHP 8.4 镜像"
+      - "构建 PHP 8.5 镜像"
+      - "添加 Docker 镜像"
+      - "更新 Docker 镜像"
+    types:
+      - completed
+
+jobs:
+  sync-cnb-repository:
+    name: "同步代码仓库"
+    if: ${{ github.event_name == 'push' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "拉取代码"
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      
+      - name: "同步代码仓库"
+        uses: docker://tencentcom/git-sync
+        env:
+          PLUGIN_TARGET_URL: "https://cnb.cool/seatonjiang/monolith.git"
+          PLUGIN_AUTH_TYPE: "https"
+          PLUGIN_USERNAME: "cnb"
+          PLUGIN_PASSWORD: ${{ secrets.CNB_TOKEN }}
+          PLUGIN_FORCE: "true"
