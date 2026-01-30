@@ -1,0 +1,112 @@
+name: "构建 PHP 8.5 镜像"
+
+on:
+  schedule:
+    - cron: "0 8 * * 1"
+  workflow_dispatch:
+
+jobs:
+  build-php85-image:
+    name: "构建 PHP 8.5 镜像"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "拉取代码"
+        uses: actions/checkout@v6
+
+      - name: "设置 QEMU 多架构支持"
+        uses: docker/setup-qemu-action@v3
+
+      - name: "设置 Docker Buildx 构建器"
+        uses: docker/setup-buildx-action@v3
+
+      - name: "登录到 GHCR"
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: "登录到 Docker Hub"
+        uses: docker/login-action@v3
+        with:
+          username: ${{ github.actor }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: "登录到 CNB"
+        uses: docker/login-action@v3
+        with:
+          registry: docker.cnb.cool
+          username: cnb
+          password: ${{ secrets.CNB_TOKEN }}
+
+      - name: "生成镜像元数据"
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ github.actor }}/php
+            ghcr.io/${{ github.actor }}/php
+            docker.cnb.cool/${{ github.actor }}/monolith/php
+          tags: |
+            8.5-fpm-alpine
+
+      - name: "生成 Dockerfile"
+        run: |
+          mkdir -p /tmp/docker-build-php
+          cat > /tmp/docker-build-php/Dockerfile << 'EOL'
+          FROM php:8.5-fpm-alpine
+          ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
+          RUN install-php-extensions redis memcached opcache pdo_mysql mysqli zip gd bz2 exif bcmath intl ftp imagick igbinary
+          EOL
+          cat /tmp/docker-build-php/Dockerfile
+
+      - name: "构建并推送镜像"
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: /tmp/docker-build-php/Dockerfile
+          platforms: linux/amd64,linux/arm/v7,linux/arm64/v8
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+
+      - name: "更新构建记录"
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase
+
+          IMAGE_NAME="PHP 8.5"
+          BUILD_TIME=$(TZ='Asia/Shanghai' date '+%Y-%m-%d')
+          README_FILE="README.md"
+          TEMP_README="README.tmp"
+
+          if grep -qF "$IMAGE_NAME" "$README_FILE"; then
+            awk -v image_name="$IMAGE_NAME" -v new_date="$BUILD_TIME" '
+            BEGIN {
+                FS = "\\s*\\|\\s*";
+                in_build_table = 0;
+            }
+
+            /^### 构建的镜像/ { in_build_table = 1 }
+            /^### 同步的镜像/ { in_build_table = 0 }
+
+            in_build_table && $2 ~ image_name {
+                printf "| %s | %s | %s | %s | %s |", $2, $3, $4, $5, new_date
+                print ""
+                next
+            }
+            
+            { print $0 }
+            ' "$README_FILE" > "$TEMP_README" && mv "$TEMP_README" "$README_FILE"
+          fi
+
+          git add "$README_FILE"
+          if git diff --staged --quiet; then
+            echo "README 文件未发生变化，无需提交！"
+          else
+            git commit -m "docs: 更新 $IMAGE_NAME 镜像的构建记录
+
+          Co-authored-by: Seaton Jiang <hi@seatonjiang.com>"
+            git push
+          fi
