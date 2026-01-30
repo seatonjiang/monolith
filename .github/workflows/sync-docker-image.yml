@@ -1,0 +1,271 @@
+name: "添加 Docker 镜像"
+
+on:
+  workflow_dispatch:
+    inputs:
+      images:
+        description: "Docker 镜像列表（image:tag,image:tag）"
+        required: true
+        default: ""
+
+jobs:
+  sync-docker-image:
+    name: "添加 Docker 镜像"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "拉取代码"
+        uses: actions/checkout@v6
+
+      - name: "安装依赖"
+        run: sudo apt-get update && sudo apt-get install -y jq skopeo
+
+      - name: "设置 Docker Buildx 构建器"
+        uses: docker/setup-buildx-action@v3
+
+      - name: "登录到 GHCR"
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: "登录到 Docker Hub"
+        uses: docker/login-action@v3
+        with:
+          username: ${{ github.actor }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: "登录到 CNB"
+        uses: docker/login-action@v3
+        with:
+          registry: docker.cnb.cool
+          username: cnb
+          password: ${{ secrets.CNB_TOKEN }}
+
+      - name: "同步 Docker 镜像并更新 README"
+        run: |
+          TABLE_TITLE="### 同步的镜像"
+
+          existing_image_info=$(awk '
+            $0 == "'"${TABLE_TITLE}"'" { in_table=1; next }
+            in_table {
+              if (/^\|/) {
+                if (match($0, /\| *([^|]+) *\| *[^|]+ *\| *[^|]+ *\| *([^|]+) *\|/, parts)) {
+                  name=parts[1];
+                  tags=parts[2];
+                  gsub(/^[ \t]*|[ \t]*$/, "", name);
+                  gsub(/^[ \t]*|[ \t]*$/, "", tags);
+                  print name ":::" tags;
+                }
+              }
+              if (!/^\|/ && !/^$/) { in_table=0 }
+            }
+          ' README.md)
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          IFS=',' read -r -a image_array <<< "${{ inputs.images }}"
+
+          for i in "${!image_array[@]}"; do
+            full_image=$(echo "${image_array[$i]}" | xargs)
+            if [ -z "$full_image" ]; then continue; fi
+
+            current_image=$(echo "$full_image" | cut -d':' -f1)
+            current_tag=$(echo "$full_image" | cut -s -d':' -f2)
+            IMAGE_NAME="$current_image"
+            DEST_IMAGE_NAME=$(basename "$current_image")
+            
+            tag_exists=false
+            while IFS= read -r line; do
+              if [ -z "$line" ]; then continue; fi
+              
+              img_name=$(echo "$line" | awk -F":::" '{print $1}')
+              img_tags=$(echo "$line" | awk -F":::" '{print $2}')
+              
+              if [[ "$img_name" == *":"* ]]; then
+                img_name=$(echo "$img_name" | cut -d':' -f1)
+              fi
+              
+              if [ "$img_name" = "$IMAGE_NAME" ] || [ "$img_name" = "$DEST_IMAGE_NAME" ]; then
+                if [[ "$img_tags" == *"$current_tag"* ]]; then
+                  tag_exists=true
+                  break
+                fi
+              fi
+            done <<< "$existing_image_info"
+            
+            if [ "$tag_exists" = true ]; then
+              echo "镜像 $IMAGE_NAME 标签 $current_tag 已存在，跳过同步！"
+              continue
+            fi
+            
+            echo "处理 $full_image..."
+            target_tag="$current_tag"
+
+            SOURCE_IMAGE_URI="docker://$current_image:$current_tag"
+            GHCR_IMAGE_URI="docker://ghcr.io/${{ github.actor }}/$DEST_IMAGE_NAME:$target_tag"
+            DOCKERHUB_IMAGE_URI="docker://${{ github.actor }}/$DEST_IMAGE_NAME:$target_tag"
+            CNB_IMAGE_URI="docker://docker.cnb.cool/${{ github.actor }}/monolith/$DEST_IMAGE_NAME:$target_tag"
+            
+            LOCAL_IMAGE_URI="dir:/tmp/docker-sync/$DEST_IMAGE_NAME:$target_tag"
+            
+            mkdir -p /tmp/docker-sync
+            
+            if skopeo copy --all "$SOURCE_IMAGE_URI" "$LOCAL_IMAGE_URI"; then
+              echo "本地同步 $full_image 成功！"
+              
+              if skopeo copy --all "$LOCAL_IMAGE_URI" "$GHCR_IMAGE_URI"; then
+                echo "GHCR 同步 $full_image 成功！"
+              else
+                echo "GHCR 同步 $full_image 失败！"
+              fi
+              
+              if skopeo copy --all "$LOCAL_IMAGE_URI" "$DOCKERHUB_IMAGE_URI"; then
+                echo "Docker Hub 同步 $full_image 成功！"
+              else
+                echo "Docker Hub 同步 $full_image 失败！"
+              fi
+              
+              if skopeo copy --all "$LOCAL_IMAGE_URI" "$CNB_IMAGE_URI"; then
+                echo "CNB 同步 $full_image 成功！"
+              else
+                echo "CNB 同步 $full_image 失败！"
+              fi
+              
+              rm -rf "/tmp/docker-sync/$DEST_IMAGE_NAME:$target_tag"
+            else
+              echo "本地同步 $full_image 失败！"
+              continue
+            fi
+
+            registry="ghcr.io/${{ github.actor }}/$DEST_IMAGE_NAME"
+            cnb_registry="docker.cnb.cool/${{ github.actor }}/monolith/$DEST_IMAGE_NAME"
+            
+            sync_date=$(TZ='Asia/Shanghai' date +"%Y-%m-%d")
+            
+            git pull --rebase
+            
+            current_existing_rows=$(awk '
+              $0 == "'"${TABLE_TITLE}"'" { in_table=1; next }
+              in_table {
+                if (/^\|/ && !/^\| :/ && !/^\| 镜像名称 \| 官方镜像 \| 分发镜像 \| 镜像标签 \| 同步日期 \|/) { print }
+                if (!/^\|/ && !/^$/) { in_table=0 }
+              }
+            ' README.md)
+
+            found=false
+            updated_existing_rows=""
+            current_tags=""
+            
+            while IFS= read -r existing_line; do
+              if [ -z "$existing_line" ]; then continue; fi
+              
+              existing_name=$(echo "$existing_line" | awk -F'|' '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+              
+              if [ "$existing_name" = "$IMAGE_NAME" ] || [ "$existing_name" = "$DEST_IMAGE_NAME" ]; then
+                current_tags=$(echo "$existing_line" | awk -F'|' '{print $5}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+                found=true
+                break
+              fi
+            done <<< "$current_existing_rows"
+            
+            if [ "$found" = true ]; then
+              if [ -z "$current_tags" ]; then
+                tags="$current_tag"
+              else
+                if [[ "$current_tags" != *"$current_tag"* ]]; then
+                  tags="$current_tags,$current_tag"
+                else
+                  tags="$current_tags"
+                fi
+              fi
+            else
+              tags="$current_tag"
+            fi
+            
+            updated_existing_rows=""
+            while IFS= read -r existing_line; do
+              if [ -z "$existing_line" ]; then continue; fi
+              
+              existing_name=$(echo "$existing_line" | awk -F'|' '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+              
+              if [ "$existing_name" = "$IMAGE_NAME" ] || [ "$existing_name" = "$DEST_IMAGE_NAME" ]; then
+                updated_line="| $DEST_IMAGE_NAME | \`${{ github.actor }}/$DEST_IMAGE_NAME\` | \`$registry\` <br> \`$cnb_registry\` | $tags | $sync_date |"
+                if [ -n "$updated_existing_rows" ]; then
+                  updated_existing_rows+=$'\n'
+                fi
+                updated_existing_rows+="${updated_line}"
+              else
+                if [ -n "$updated_existing_rows" ]; then
+                  updated_existing_rows+=$'\n'
+                fi
+                updated_existing_rows+="${existing_line}"
+              fi
+            done <<< "$current_existing_rows"
+            
+            if [ "$found" = true ]; then
+              final_table_rows="$updated_existing_rows"
+            else
+              new_row="| $DEST_IMAGE_NAME | \`${{ github.actor }}/$DEST_IMAGE_NAME\` | \`$registry\` <br> \`$cnb_registry\` | $tags | $sync_date |"
+              if [ -z "$current_existing_rows" ]; then
+                final_table_rows="$new_row"
+              else
+                final_table_rows=$(
+                  {
+                    echo "$current_existing_rows"
+                    echo "$new_row"
+                  } | grep -v '^$' | awk -F'|' '
+                    {
+                      key = $2;
+                      gsub(/^[[:space:]]+|[[:space:]]+$/, "", key);
+                      print key "@@@" $0;
+                    }
+                  ' | sort -f | sed 's/^.*@@@//'
+                )
+              fi
+            fi
+
+            {
+              echo "${TABLE_TITLE}"
+              echo ""
+              echo "| 镜像名称 | 官方镜像 | 分发镜像 | 镜像标签 | 同步日期 |"
+              echo "| :--- | :--- | :--- | :--- | :--- |"
+              echo "$final_table_rows"
+              echo ""
+            } > new_table.tmp
+
+            awk -v title="${TABLE_TITLE}" '
+              BEGIN { replaced=0; skipping=0 }
+              $0 == title && !replaced {
+                while ((getline line < "new_table.tmp") > 0) { print line }
+                close("new_table.tmp");
+                replaced=1;
+                skipping=1;
+                next;
+              }
+              skipping {
+                if (/^\|/ || /^$/) { 
+                  next 
+                } else { 
+                  skipping=0;
+                  print;
+                  next;
+                }
+              }
+              { print }
+            ' README.md > README.tmp && mv README.tmp README.md
+
+            git add README.md
+            rm -f new_table.tmp
+
+            if git diff --staged --quiet; then
+              echo "镜像 $DEST_IMAGE_NAME 无变更，无需提交！"
+            else
+              git commit -m "docs: 添加 $DEST_IMAGE_NAME 镜像的同步记录
+
+          Co-authored-by: Seaton Jiang <hi@seatonjiang.com>"
+              git push
+            fi
+          done
