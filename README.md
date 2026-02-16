@@ -88,7 +88,7 @@ docker compose up -d
 | :--- | :--- | :--- | :--- | :--- |
 | Caddy | `seatonjiang/caddy` | `ghcr.io/seatonjiang/caddy` <br> `docker.cnb.cool/seatonjiang/monolith/caddy` | alpine | 2026-02-16 |
 | PHP 8.3 | `seatonjiang/php` | `ghcr.io/seatonjiang/php` <br> `docker.cnb.cool/seatonjiang/monolith/php` | 8.3-fpm-alpine | 2026-02-16 |
-| PHP 8.4 | `seatonjiang/php` | `ghcr.io/seatonjiang/php` <br> `docker.cnb.cool/seatonjiang/monolith/php` | 8.4-fpm-alpine | 2026-02-09 |
+| PHP 8.4 | `seatonjiang/php` | `ghcr.io/seatonjiang/php` <br> `docker.cnb.cool/seatonjiang/monolith/php` | 8.4-fpm-alpine | 2026-02-16 |
 | PHP 8.5 | `seatonjiang/php` | `ghcr.io/seatonjiang/php` <br> `docker.cnb.cool/seatonjiang/monolith/php` | 8.5-fpm-alpine | 2026-02-09 |
 
 ### 同步的镜像
