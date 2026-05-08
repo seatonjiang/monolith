@@ -1,6 +1,6 @@
 ARG IMAGE_REGISTRY
 ARG REDIS_VERSION
-FROM ${IMAGE_REGISTRY:-docker.cnb.cool/seatonjiang/monolith}/redis:${REDIS_VERSION:-8.4-alpine}
+FROM ${IMAGE_REGISTRY:-docker.cnb.cool/seatonjiang/monolith}/redis:${REDIS_VERSION:-8.6-alpine}
 
 # 替换 Alpine 镜像源
 ARG ALPINE_MIRROR
