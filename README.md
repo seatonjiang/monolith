@@ -96,7 +96,7 @@ docker compose up -d
 | 镜像名称 | 官方镜像 | 分发镜像 | 镜像标签 | 同步日期 |
 | :--- | :--- | :--- | :--- | :--- |
 | mariadb | `seatonjiang/mariadb` | `ghcr.io/seatonjiang/mariadb` <br> `docker.cnb.cool/seatonjiang/monolith/mariadb` | 11.4,11.8 | 2026-05-21 |
-| memcached | `seatonjiang/memcached` | `ghcr.io/seatonjiang/memcached` <br> `docker.cnb.cool/seatonjiang/monolith/memcached` | 1.6-alpine | 2026-05-20 |
+| memcached | `seatonjiang/memcached` | `ghcr.io/seatonjiang/memcached` <br> `docker.cnb.cool/seatonjiang/monolith/memcached` | 1.6-alpine | 2026-05-21 |
 | phpmyadmin | `seatonjiang/phpmyadmin` | `ghcr.io/seatonjiang/phpmyadmin` <br> `docker.cnb.cool/seatonjiang/monolith/phpmyadmin` | 5.2 | 2026-05-17 |
 | redis | `seatonjiang/redis` | `ghcr.io/seatonjiang/redis` <br> `docker.cnb.cool/seatonjiang/monolith/redis` | 8.6-alpine | 2026-05-10 |
 
