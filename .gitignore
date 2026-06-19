@@ -44,11 +44,11 @@ Icon
 
 # Caddy 配置文件
 /services/caddy/Caddyfile.d/*
-!services/caddy/Caddyfile.d/monolith.caddyfile
+!services/caddy/Caddyfile.d/.gitkeep
 
 # 网站目录
 /wwwroot/*
-!/wwwroot/default/
+!/wwwroot/**/.gitkeep
 
 # 环境文件
 .env
