@@ -116,7 +116,7 @@ services:
       context: ./services/redis
       args:
         - IMAGE_REGISTRY=${IMAGE_REGISTRY:-docker.cnb.cool/seatonjiang/monolith}
-        - REDIS_VERSION=${REDIS_VERSION:-8.6-alpine}
+        - REDIS_VERSION=${REDIS_VERSION:-8.8-alpine}
         - ALPINE_MIRROR=${ALPINE_MIRROR:-mirrors.cloud.tencent.com}
     container_name: redis
     restart: always

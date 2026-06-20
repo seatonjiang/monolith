@@ -18,7 +18,7 @@ git clone --depth 1 https://github.com/seatonjiang/monolith.git
 git clone --depth 1 https://cnb.cool/seatonjiang/monolith.git
 ```
 
-### 第二步：编辑配置
+### 第二步：初始化项目
 
 进入项目文件夹：
 
@@ -26,59 +26,17 @@ git clone --depth 1 https://cnb.cool/seatonjiang/monolith.git
 cd monolith/
 ```
 
-重命名环境配置文件：
+执行初始化脚本：
 
 ```bash
-cp env.example .env
+bash monolith.sh
 ```
 
-编辑 `.env` 文件，根据需要修改配置：
+#### 执行截图
 
-```bash
-vi .env
-```
+![](.github/assets/script-execution.png)
 
-重点配置项：
-
-```ini
-# PHP 版本
-PHP_VERSION=8.5-fpm-alpine
-
-# MariaDB 默认数据库名称
-MARIADB_DATABASE_NAME=monolith
-
-# phpMyAdmin 访问端口
-PHPMYADMIN_WEB_PORT=28080
-```
-
-> 提示：云服务器需要在防火墙中放通 80、443 以及 phpMyAdmin 访问端口（默认为 28080）。
-
-### 第三步：修改密码
-
-修改 `secrets` 目录中的配置文件：
-
-- `mariadb-root-pwd`：MariaDB 管理员密码（账号为 `root`）
-- `mariadb-user-name`：MariaDB 用户名称（默认为 `monolith`）
-- `mariadb-user-pwd`：MariaDB 用户密码
-
-> 提示：在生产环境中，请务必修改默认密码，并确保使用强密码，使用用户级权限进行访问。
-
-### 第四步：构建容器
-
-构建并后台运行全部容器：
-
-```bash
-docker compose up -d
-```
-
-### 第五步：网站浏览
-
-- 本地环境：`http://127.0.0.1`
-- 线上环境：`http://<服务器 IP 地址>`
-
-### 第六步：安全清理
-
-默认站点目录为 `wwwroot/default`，测试完成后请立即删除该目录及 `services/caddy/Caddyfile.d/monolith.caddyfile` 配置文件，避免暴露配置信息。
+> 提示：云服务器需要在防火墙中放通 80、443 以及 phpMyAdmin 访问端口（默认为 28080），MariaDB 密码将随机生成，脚本最后可以选择构建容器也可以稍后在脚本中构建并后台启动容器。
 
 ## 📦 镜像列表
 
@@ -127,7 +85,6 @@ monolith
 │   ├── php                         PHP 配置目录
 │   └── redis                       Redis 配置目录
 ├── wwwroot                         Web 服务根目录
-│   └── default                     默认站点目录
 ├── compose.yaml                    Docker Compose 配置文件
 └── env.example                     环境配置示例文件
 ```
@@ -372,43 +329,6 @@ docker exec -w /etc/caddy caddy caddy reload
 #### 第三步：测试访问
 
 在浏览器中输入 `https://example.com` 测试网站是否正常访问。
-
-### Caddy 使用 Google Trust Services 签发证书
-
-要使用 Google Trust Services 签发证书，请按照以下步骤操作：
-
-#### 第一步：获取 EAB 密钥
-
-通过 [Google Cloud Shell](https://console.cloud.google.com/welcome) 获取 EAB 密钥，执行以下命令：
-
-```bash
-gcloud publicca external-account-keys create
-```
-
-> 提示：在获得 EAB 密钥后的 7 天内需要使用该密钥，如果 7 天内未使用密钥将会过期。但使用 EAB 密钥注册的 ACME 账号没有到期时间。
-
-#### 第二步：添加 EAB 密钥到 Caddyfile
-
-在 `services/caddy/Caddyfile` 文件中取消注释并添加获取到的 EAB 密钥配置，例如：
-
-```caddyfile
-# 使用 Google Trust Services 签发证书
-acme_ca https://dv.acme-v02.api.pki.goog/directory
-acme_eab {
-    key_id cea2c36a8r7eae1009df9688ed320315
-    mac_key xE3fSdsfDS32rfds2KMq0zyGFfd34T3crvyYe-q1CLLsV0w-U7Dimy0fdsaf0Qt0lwYgwfnWOWyqYz
-}
-```
-
-#### 第三步：重新加载
-
-```bash
-docker exec -w /etc/caddy caddy caddy reload
-```
-
-#### 第四步：测试访问
-
-在浏览器中输入 `https://example.com` 测试网站是否正常访问并查看证书颁发者。
 
 ### PHP 安装扩展
 

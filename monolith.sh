@@ -514,8 +514,8 @@ PHPMYADMIN_UPLOAD_LIMIT=$PHPMYADMIN_UPLOAD_LIMIT
 # ----------------------------------------------------------------------------
 
 # Redis 配置
-# 支持版本: 8.6-alpine
-REDIS_VERSION=8.6-alpine
+# 支持版本: 8.8-alpine
+REDIS_VERSION=8.8-alpine
 
 # Memcached 配置
 # 支持版本: 1.6-alpine
