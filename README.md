@@ -56,7 +56,7 @@ bash monolith.sh
 | mariadb | `seatonjiang/mariadb` | `ghcr.io/seatonjiang/mariadb` <br> `docker.cnb.cool/seatonjiang/monolith/mariadb` | 11.4,11.8 | 2026-06-03 |
 | memcached | `seatonjiang/memcached` | `ghcr.io/seatonjiang/memcached` <br> `docker.cnb.cool/seatonjiang/monolith/memcached` | 1.6-alpine | 2026-06-20 |
 | phpmyadmin | `seatonjiang/phpmyadmin` | `ghcr.io/seatonjiang/phpmyadmin` <br> `docker.cnb.cool/seatonjiang/monolith/phpmyadmin` | 5.2 | 2026-06-15 |
-| redis | `seatonjiang/redis` | `ghcr.io/seatonjiang/redis` <br> `docker.cnb.cool/seatonjiang/monolith/redis` | 8.6-alpine,8.8-alpine | 2026-06-20 |
+| redis | `seatonjiang/redis` | `ghcr.io/seatonjiang/redis` <br> `docker.cnb.cool/seatonjiang/monolith/redis` | 8.8-alpine | 2026-06-20 |
 
 ## 📂 目录结构
 
@@ -165,19 +165,34 @@ error_log = /var/log/php/error.log                       # 错误日志位置
 
 ```ini
 # 小型服务器（2GB 内存）
-innodb_buffer_pool_size=256M          # InnoDB 缓冲池大小
-tmp_table_size=128M                   # 内存临时表最大大小
-max_heap_table_size=128M              # 用户创建的内存表最大大小
+innodb_buffer_pool_size=512M
+tmp_table_size=32M
+max_heap_table_size=32M
+join_buffer_size=1M
+table_open_cache=512
+max_connections=50
+innodb_log_buffer_size=16M
+innodb_log_file_size=128M
 
 # 中型服务器（4GB 内存）
-innodb_buffer_pool_size=512M          # InnoDB 缓冲池大小
-tmp_table_size=256M                   # 内存临时表最大大小
-max_heap_table_size=256M              # 用户创建的内存表最大大小
+innodb_buffer_pool_size=1536M
+tmp_table_size=64M
+max_heap_table_size=64M
+join_buffer_size=2M
+table_open_cache=1000
+max_connections=100
+innodb_log_buffer_size=32M
+innodb_log_file_size=256M
 
 # 大型服务器（8GB+ 内存）
-innodb_buffer_pool_size=2G            # InnoDB 缓冲池大小
-tmp_table_size=512M                   # 内存临时表最大大小
-max_heap_table_size=512M              # 用户创建的内存表最大大小
+innodb_buffer_pool_size=4G
+tmp_table_size=128M
+max_heap_table_size=128M
+join_buffer_size=2M
+table_open_cache=2000
+max_connections=150
+innodb_log_buffer_size=64M
+innodb_log_file_size=512M
 
 # 性能监控（如果是低配生产环境，在需要的时候开启）
 performance_schema=ON
