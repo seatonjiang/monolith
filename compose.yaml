@@ -52,7 +52,7 @@ services:
       context: ./services/mariadb
       args:
         - IMAGE_REGISTRY=${IMAGE_REGISTRY:-docker.cnb.cool/seatonjiang/monolith}
-        - MARIADB_VERSION=${MARIADB_VERSION:-11.8}
+        - MARIADB_VERSION=${MARIADB_VERSION:-12.3}
         - UBUNTU_MIRROR=${UBUNTU_MIRROR:-mirrors.cloud.tencent.com}
     container_name: mariadb
     restart: always

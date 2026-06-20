@@ -1,6 +1,6 @@
 ARG IMAGE_REGISTRY
 ARG MARIADB_VERSION
-FROM ${IMAGE_REGISTRY:-docker.cnb.cool/seatonjiang/monolith}/mariadb:${MARIADB_VERSION:-11.8}
+FROM ${IMAGE_REGISTRY:-docker.cnb.cool/seatonjiang/monolith}/mariadb:${MARIADB_VERSION:-12.3}
 
 # 替换 Ubuntu 镜像源
 ARG UBUNTU_MIRROR

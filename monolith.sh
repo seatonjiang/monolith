@@ -499,7 +499,7 @@ CADDY_HTTPS_PORT=$CADDY_HTTPS_PORT
 # ----------------------------------------------------------------------------
 
 # MariaDB 配置
-# 支持版本: 11.4, 11.8
+# 支持版本: 11.4, 11.8, 12.3
 MARIADB_VERSION=$MARIADB_VERSION
 MARIADB_DATABASE_NAME=$MARIADB_DATABASE_NAME
 
@@ -615,7 +615,7 @@ initialize_project() {
     CADDY_HTTP_PORT="$(prompt_required_value "[6] Caddy HTTP 端口配置" "80")"
     CADDY_HTTPS_PORT="$(prompt_required_value "[7] Caddy HTTPS 端口配置" "443")"
 
-    MARIADB_VERSION="$(prompt_choice "[8] MariaDB 版本配置" "1" "11.8" "11.4")"
+    MARIADB_VERSION="$(prompt_choice "[8] MariaDB 版本配置" "1" "12.3" "11.8" "11.4")"
     MARIADB_DATABASE_NAME="$(prompt_required_value "[9] MariaDB 默认数据库名称配置" "monolith")"
 
     local mariadb_user_pwd=""
