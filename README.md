@@ -55,7 +55,7 @@ bash monolith.sh
 | :--- | :--- | :--- | :--- | :--- |
 | mariadb | `seatonjiang/mariadb` | `ghcr.io/seatonjiang/mariadb` <br> `docker.cnb.cool/seatonjiang/monolith/mariadb` | 11.4,11.8,12.3 | 2026-07-03 |
 | memcached | `seatonjiang/memcached` | `ghcr.io/seatonjiang/memcached` <br> `docker.cnb.cool/seatonjiang/monolith/memcached` | 1.6-alpine | 2026-06-20 |
-| phpmyadmin | `seatonjiang/phpmyadmin` | `ghcr.io/seatonjiang/phpmyadmin` <br> `docker.cnb.cool/seatonjiang/monolith/phpmyadmin` | 5.2 | 2026-06-27 |
+| phpmyadmin | `seatonjiang/phpmyadmin` | `ghcr.io/seatonjiang/phpmyadmin` <br> `docker.cnb.cool/seatonjiang/monolith/phpmyadmin` | 5.2 | 2026-07-04 |
 | redis | `seatonjiang/redis` | `ghcr.io/seatonjiang/redis` <br> `docker.cnb.cool/seatonjiang/monolith/redis` | 8.8-alpine | 2026-06-24 |
 
 ## 📂 目录结构
