@@ -51,6 +51,7 @@ bash monolith.sh
 
 | 镜像名称 | 官方镜像 | 分发镜像 | 镜像标签 | 同步日期 |
 | :--- | :--- | :--- | :--- | :--- |
+| mariadb | `seatonjiang/mariadb` | `docker.cnb.cool/seatonjiang/monolith/mariadb` | 12.3 | 2026-08-14 |
 
 ## 📂 目录结构
 
