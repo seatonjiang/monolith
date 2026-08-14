@@ -1,0 +1,75 @@
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Git 相关文件
+.git/
+.gitignore
+
+# CI 相关文件
+.github/
+
+# 数据目录
+data/
+
+# 日志目录
+logs/
+
+# 密钥目录
+secrets/
+
+# 网站目录
+wwwroot/
+
+# 环境变量文件
+.env
+.env.*
+
+# MariaDB 脚本
+services/mariadb/scripts/
+
+# SSL 证书
+services/caddy/ssl/
+
+# 文档
+README.md
+
+# 开发工具配置
+compose.yaml
+.dockerignore
+.editorconfig
+.prettierignore
+
+# 备份文件
+*.bak
