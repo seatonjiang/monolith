@@ -44,7 +44,7 @@ bash monolith.sh
 
 | 镜像名称 | 官方镜像 | 分发镜像 | 镜像标签 | 构建时间 |
 | :--- | :--- | :--- | :--- | :--- |
-| Caddy | `seatonjiang/caddy` | `docker.cnb.cool/seatonjiang/monolith/caddy` | alpine | 2026-08-14 |
+| Caddy | `seatonjiang/caddy` | `docker.cnb.cool/seatonjiang/monolith/caddy` | alpine | 2026-08-17 |
 | PHP | `seatonjiang/php` | `docker.cnb.cool/seatonjiang/monolith/php` | 8.5-fpm-alpine | 2026-08-14 |
 
 ### 同步的镜像
