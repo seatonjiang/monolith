@@ -51,7 +51,7 @@ bash monolith.sh
 
 | 镜像名称 | 官方镜像 | 分发镜像 | 镜像标签 | 同步日期 |
 | :--- | :--- | :--- | :--- | :--- |
-| mariadb | `seatonjiang/mariadb` | `docker.cnb.cool/seatonjiang/monolith/mariadb` | 12.3 | 2026-08-20 |
+| mariadb | `seatonjiang/mariadb` | `docker.cnb.cool/seatonjiang/monolith/mariadb` | 12.3 | 2026-08-21 |
 | memcached | `seatonjiang/memcached` | `docker.cnb.cool/seatonjiang/monolith/memcached` | 1.6-alpine | 2026-08-14 |
 | phpmyadmin | `seatonjiang/phpmyadmin` | `docker.cnb.cool/seatonjiang/monolith/phpmyadmin` | 5.2 | 2026-08-14 |
 | redis | `seatonjiang/redis` | `docker.cnb.cool/seatonjiang/monolith/redis` | 8.10-alpine | 2026-08-14 |
