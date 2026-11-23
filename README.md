@@ -18,7 +18,7 @@ git clone --depth 1 https://github.com/seatonjiang/monolith.git
 git clone --depth 1 https://cnb.cool/seatonjiang/monolith.git
 ```
 
-### 第二步：初始化项目
+### 第二步：编辑环境变量
 
 进入项目文件夹：
 
@@ -26,12 +26,19 @@ git clone --depth 1 https://cnb.cool/seatonjiang/monolith.git
 cd monolith/
 ```
 
-创建并编辑环境变量：
+创建环境变量文件：
 
 ```bash
 cp env.example .env
+```
+
+编辑环境变量文件：
+
+```bash
 vim .env
 ```
+
+### 第三步：运行项目
 
 构建并后台运行全部容器：
 
