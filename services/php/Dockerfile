@@ -1,6 +1,6 @@
 ARG IMAGE_REGISTRY
 ARG PHP_VERSION
-FROM ${IMAGE_REGISTRY:-docker.cnb.cool/seatonjiang/monolith}/php:${PHP_VERSION:-8.5-fpm-alpine}
+FROM ${IMAGE_REGISTRY:-docker.cnb.cool/seatonjiang/monolith}/php:${PHP_VERSION:-8.6-fpm-alpine}
 
 # 替换 Alpine 镜像源
 ARG ALPINE_MIRROR

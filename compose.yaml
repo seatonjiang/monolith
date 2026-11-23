@@ -4,7 +4,7 @@ services:
       context: ./services/php
       args:
         - IMAGE_REGISTRY=${IMAGE_REGISTRY:-docker.cnb.cool/seatonjiang/monolith}
-        - PHP_VERSION=${PHP_VERSION:-8.5-fpm-alpine}
+        - PHP_VERSION=${PHP_VERSION:-8.6-fpm-alpine}
         - ALPINE_MIRROR=${ALPINE_MIRROR:-mirrors.cloud.tencent.com}
     container_name: php
     restart: always

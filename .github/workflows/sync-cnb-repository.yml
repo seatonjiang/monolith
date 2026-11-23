@@ -5,7 +5,8 @@ on:
   workflow_run:
     workflows:
       - "构建 Caddy 镜像"
-      - "构建 PHP 镜像"
+      - "构建 PHP 8.5 镜像"
+      - "构建 PHP 8.6 镜像"
       - "添加 Docker 镜像"
       - "更新 Docker 镜像"
     types:
