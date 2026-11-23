@@ -26,17 +26,18 @@ git clone --depth 1 https://cnb.cool/seatonjiang/monolith.git
 cd monolith/
 ```
 
-执行初始化脚本：
+创建并编辑环境变量：
 
 ```bash
-bash monolith.sh
+cp env.example .env
+vim .env
 ```
 
-#### 执行截图
+构建并后台运行全部容器：
 
-![](.github/assets/script-execution.png)
-
-> 提示：云服务器需要在防火墙中放通 80、443 以及 phpMyAdmin 访问端口（默认为 28080），MariaDB 密码将随机生成。
+```bash
+docker compose up -d
+```
 
 ## 📦 镜像列表
 
@@ -45,7 +46,7 @@ bash monolith.sh
 | 镜像名称 | 官方镜像 | 分发镜像 | 镜像标签 | 构建时间 |
 | :--- | :--- | :--- | :--- | :--- |
 | Caddy | `seatonjiang/caddy` | `docker.cnb.cool/seatonjiang/monolith/caddy` | alpine | 2026-11-20 |
-| PHP | `seatonjiang/php` | `docker.cnb.cool/seatonjiang/monolith/php` | 8.5-fpm-alpine | 2026-11-20 |
+| PHP | `seatonjiang/php` | `docker.cnb.cool/seatonjiang/monolith/php` | 8.5-fpm-alpine, 8.6-fpm-alpine | 2026-11-20 |
 
 ### 同步的镜像
 
