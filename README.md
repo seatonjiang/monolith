@@ -61,7 +61,7 @@ docker compose up -d
 | :--- | :--- | :--- | :--- | :--- |
 | mariadb | `seatonjiang/mariadb` | `docker.cnb.cool/seatonjiang/monolith/mariadb` | 12.3 | 2026-11-21 |
 | memcached | `seatonjiang/memcached` | `docker.cnb.cool/seatonjiang/monolith/memcached` | 1.6-alpine | 2026-11-10 |
-| phpmyadmin | `seatonjiang/phpmyadmin` | `docker.cnb.cool/seatonjiang/monolith/phpmyadmin` | 5.2 | 2026-11-24 |
+| phpmyadmin | `seatonjiang/phpmyadmin` | `docker.cnb.cool/seatonjiang/monolith/phpmyadmin` | 5.2 | 2026-11-25 |
 | redis | `seatonjiang/redis` | `docker.cnb.cool/seatonjiang/monolith/redis` | 8.10-alpine | 2026-11-12 |
 
 ## 📂 目录结构
